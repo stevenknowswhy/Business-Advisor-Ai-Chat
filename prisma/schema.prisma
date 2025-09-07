@@ -1,0 +1,113 @@
+// AI Advisor Chat - Prisma Schema
+// Full-stack SaaS application with specialized AI advisors
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// Enums
+enum AdvisorStatus {
+    active
+    inactive
+    archived
+}
+
+enum MessageSender {
+    user
+    advisor
+    system
+}
+
+// User management (synced with Clerk)
+model User {
+    id            String         @id             // Clerk user ID
+    email         String?
+    name          String?
+    image         String?
+    plan          String         @default("free") // free | base | premium
+    conversations Conversation[]
+    createdAt     DateTime       @default(now())
+    updatedAt     DateTime       @updatedAt
+}
+
+// AI Advisor personas
+model Advisor {
+    id            String         @id            // e.g., "alex-reyes-v3"
+    schemaVersion String
+    status        AdvisorStatus  @default(active)
+    persona       Json           // Full persona configuration
+    roleDefinition Json?         // Role and scope definition
+    components    Json           // Behavioral components
+    metadata      Json?          // Version and ownership info
+    localization  Json?          // Language support
+    modelHint     String?        // Preferred model
+    tags          String[]       @default([])
+    createdAt     DateTime       @default(now())
+    updatedAt     DateTime       @updatedAt
+
+    messages      Message[]
+    memories      AdvisorMemory[]
+    conversations Conversation[]
+}
+
+// Conversation threads
+model Conversation {
+    id               String     @id @default(cuid())
+    userId           String
+    user             User       @relation(fields: [userId], references: [id])
+    title            String?
+    activeAdvisorId  String?
+    activeAdvisor    Advisor?   @relation(fields: [activeAdvisorId], references: [id])
+    createdAt        DateTime   @default(now())
+    updatedAt        DateTime   @updatedAt
+
+    messages         Message[]
+    summaries        ThreadSummary[]
+    memories         AdvisorMemory[]
+}
+
+// Individual messages
+model Message {
+    id              String         @id @default(cuid())
+    conversationId  String
+    conversation    Conversation   @relation(fields: [conversationId], references: [id])
+    sender          MessageSender
+    advisorId       String?
+    advisor         Advisor?       @relation(fields: [advisorId], references: [id])
+    content         String
+    contentJson     Json?          // Metadata, usage stats
+    mentions        String[]       @default([]) // Referenced advisor IDs
+    tokensUsed      Int?
+    createdAt       DateTime       @default(now())
+}
+
+// Conversation summaries for context management
+model ThreadSummary {
+    id              String       @id @default(cuid())
+    conversationId  String
+    conversation    Conversation @relation(fields: [conversationId], references: [id])
+    content         String
+    startMessageId  String?
+    endMessageId    String?
+    createdAt       DateTime     @default(now())
+}
+
+// Advisor-specific memory storage
+model AdvisorMemory {
+    id              String       @id @default(cuid())
+    conversationId  String
+    advisorId       String
+    conversation    Conversation @relation(fields: [conversationId], references: [id])
+    advisor         Advisor      @relation(fields: [advisorId], references: [id])
+    key             String       // Memory key (e.g., "user_preferences")
+    value           Json         // Memory content
+    createdAt       DateTime     @default(now())
+    updatedAt       DateTime     @updatedAt
+
+    @@unique([conversationId, advisorId, key])
+}

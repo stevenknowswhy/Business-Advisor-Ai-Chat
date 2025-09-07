@@ -131,21 +131,36 @@ export function extractMentions(content: string, availableAdvisors: Advisor[]): 
     };
   });
 
-  // Look for @mentions in the content
-  const mentionRegex = /@(\w+(?:\s+\w+)*)/gi;
-  let match;
+  // Look for @mentions in the content - try both single word and two word patterns
+  const singleWordRegex = /@(\w+)\b/gi;
+  const twoWordRegex = /@(\w+\s+\w+)\b/gi;
 
-  while ((match = mentionRegex.exec(content)) !== null) {
+  // First try two-word matches (full names)
+  let match;
+  while ((match = twoWordRegex.exec(content)) !== null) {
     const mentionText = match[1]?.toLowerCase();
-    
-    // Try to match full name or first name
-    const matchedAdvisor = advisorNames.find(advisor => 
-      advisor.name.includes(mentionText) || 
-      advisor.firstName === mentionText
+
+    const matchedAdvisor = advisorNames.find(advisor =>
+      advisor.name === mentionText
     );
 
     if (matchedAdvisor && !mentions.includes(matchedAdvisor.id)) {
       mentions.push(matchedAdvisor.id);
+    }
+  }
+
+  // If no two-word matches, try single word matches (first names)
+  if (mentions.length === 0) {
+    while ((match = singleWordRegex.exec(content)) !== null) {
+      const mentionText = match[1]?.toLowerCase();
+
+      const matchedAdvisor = advisorNames.find(advisor =>
+        advisor.firstName === mentionText
+      );
+
+      if (matchedAdvisor && !mentions.includes(matchedAdvisor.id)) {
+        mentions.push(matchedAdvisor.id);
+      }
     }
   }
 

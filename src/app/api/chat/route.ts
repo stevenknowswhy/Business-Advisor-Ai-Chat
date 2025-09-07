@@ -334,7 +334,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Return the response as plain text for testing
-      return new Response(assistantMessage, {
+      return new Response(assistantMessage as string, {
         status: 200,
         headers: {
           "Content-Type": "text/plain",

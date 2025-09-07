@@ -19,12 +19,12 @@ const config = {
     const cspDirectives = [
       "default-src 'self'",
       isDev
-        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://above-peacock-26.clerk.accounts.dev https://clerk.com"
-        : "script-src 'self' 'unsafe-inline' https://above-peacock-26.clerk.accounts.dev https://clerk.com",
+        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://clerk.com"
+        : "script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: https: blob:",
-      "connect-src 'self' https://api.clerk.com https://clerk.com https://above-peacock-26.clerk.accounts.dev https://openrouter.ai https://x6amvsxo6a.ufs.sh wss: ws:",
+      "connect-src 'self' https://api.clerk.com https://clerk.com https://*.clerk.accounts.dev https://openrouter.ai https://x6amvsxo6a.ufs.sh wss: ws:",
       "frame-src 'self' https://challenges.cloudflare.com",
       "object-src 'none'",
       "base-uri 'self'",

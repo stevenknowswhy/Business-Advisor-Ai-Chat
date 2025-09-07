@@ -1,16 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useUser } from '@clerk/nextjs';
 
 export default function TestChatPage() {
-  const { user, isLoaded } = useUser();
   const [response, setResponse] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [logs, setLogs] = useState<string[]>([]);
-  const [advisorId, setAdvisorId] = useState<string>('alex-reyes-v3');
-  const [messageText, setMessageText] = useState<string>('Hello, this is a test message');
+  const [messageText, setMessageText] = useState<string>('What are the key strategies for scaling a SaaS startup?');
 
 
   const addLog = (message: string) => {
@@ -18,37 +15,25 @@ export default function TestChatPage() {
   };
 
   const testChatAPI = async () => {
-    if (!user) {
-      setError('User not authenticated');
-      return;
-    }
-
     setLoading(true);
     setError('');
     setResponse('');
     setLogs([]);
 
-    addLog('Starting chat API test...');
+    addLog('Starting OpenRouter API test via /api/chat-minimal...');
 
     try {
-      const testPayload: any = {
+      const testPayload = {
         messages: [{
           id: Date.now().toString(),
           role: 'user',
           content: messageText
-        }],
-        advisorId
+        }]
       };
 
-      // Drop conversationId if null to avoid schema surprises
-      // (schema allows optional string; sending null may cause issues in some runtimes)
-      // If you want to test an existing conversation, add its string id below.
-      const conversationId: string | undefined = undefined;
-      if (conversationId) testPayload.conversationId = conversationId;
+      addLog(`Sending request to /api/chat-minimal with payload: ${JSON.stringify(testPayload)}`);
 
-      addLog(`Sending request to /api/chat with payload: ${JSON.stringify(testPayload)}`);
-
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/chat-minimal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -62,37 +47,16 @@ export default function TestChatPage() {
       if (!response.ok) {
         const errorText = await response.text();
         addLog(`Error response body: ${errorText}`);
-        addLog(`If this mentions a field and path, fix that field and retry.`);
         setError(errorText);
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
-      if (!response.body) {
-        addLog('No response body received');
-        throw new Error('No response body');
-      }
+      // The /api/chat-minimal endpoint returns plain text, not streaming
+      const responseText = await response.text();
+      addLog(`Response received. Length: ${responseText.length} characters`);
+      addLog(`Response preview: ${responseText.substring(0, 200)}...`);
 
-      addLog('Starting to read streaming response...');
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let fullResponse = '';
-      let chunkCount = 0;
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          addLog(`Stream reading completed. Total chunks: ${chunkCount}`);
-          break;
-        }
-
-        chunkCount++;
-        const chunk = decoder.decode(value, { stream: true });
-        addLog(`Chunk ${chunkCount}: "${chunk}"`);
-        fullResponse += chunk;
-      }
-
-      addLog(`Final response length: ${fullResponse.length}`);
-      setResponse(fullResponse);
+      setResponse(responseText);
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -103,45 +67,36 @@ export default function TestChatPage() {
     }
   };
 
-  if (!isLoaded) {
-    return <div className="p-8">Loading...</div>;
-  }
-
-  if (!user) {
-    return <div className="p-8">Please sign in to test the chat API.</div>;
-  }
-
   return (
     <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Chat API Test Page</h1>
+      <h1 className="text-2xl font-bold mb-6">OpenRouter API Test Page</h1>
+
+      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
+        <h3 className="font-bold text-blue-800 mb-2">🧪 Test Configuration</h3>
+        <ul className="text-sm text-blue-700 space-y-1">
+          <li>• <strong>Model:</strong> x-ai/grok-code-fast-1</li>
+          <li>• <strong>Endpoint:</strong> /api/chat-minimal (no authentication required)</li>
+          <li>• <strong>Purpose:</strong> Direct OpenRouter API testing</li>
+        </ul>
+      </div>
 
       <div className="mb-6 space-y-3">
-        <p className="mb-2">User: {user.emailAddresses[0]?.emailAddress}</p>
         <div className="flex gap-3 items-center">
-          <label className="w-32">Advisor ID</label>
+          <label className="w-32 font-medium">Test Message:</label>
           <input
-            className="border rounded px-2 py-1 flex-1"
-            value={advisorId}
-            onChange={(e) => setAdvisorId(e.target.value)}
-            placeholder="e.g., alex-reyes-v3"
-          />
-        </div>
-        <div className="flex gap-3 items-center">
-          <label className="w-32">Message</label>
-          <input
-            className="border rounded px-2 py-1 flex-1"
+            className="border rounded px-3 py-2 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
-            placeholder="Type a test message"
+            placeholder="Enter your business question here..."
           />
         </div>
         <button
           type="button"
           onClick={testChatAPI}
           disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
         >
-          {loading ? 'Testing...' : 'Test Chat API'}
+          {loading ? '🔄 Testing OpenRouter API...' : '🚀 Test OpenRouter API'}
         </button>
       </div>
 
@@ -174,14 +129,15 @@ export default function TestChatPage() {
         </div>
       </div>
 
-      <div className="text-sm text-gray-600">
-        <h3 className="font-bold mb-2">What this test does:</h3>
+      <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded">
+        <h3 className="font-bold mb-2">📋 What this test does:</h3>
         <ul className="list-disc list-inside space-y-1">
-          <li>Sends a direct POST request to /api/chat</li>
-          <li>Logs all request/response details</li>
-          <li>Shows streaming response chunks</li>
-          <li>Captures any errors with full details</li>
+          <li>Sends a direct POST request to <code className="bg-gray-200 px-1 rounded">/api/chat-minimal</code></li>
+          <li>Tests OpenRouter API integration with x-ai/grok-code-fast-1 model</li>
+          <li>Logs all request/response details for debugging</li>
+          <li>Works without authentication (public endpoint)</li>
           <li>Bypasses the main chat UI to isolate API issues</li>
+          <li>Provides comprehensive error reporting</li>
         </ul>
       </div>
     </div>

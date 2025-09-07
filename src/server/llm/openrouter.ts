@@ -31,6 +31,8 @@ export function getModelForTier(tier: string): string {
 
 /**
  * Model fallback chain for reliability
+ * Primary: qwen/qwen-2.5-72b-instruct
+ * Fallback: deepseek/deepseek-chat
  */
 export const MODEL_FALLBACKS: Record<string, string[]> = {
   [env.OPENROUTER_PREMIUM_MODEL]: [

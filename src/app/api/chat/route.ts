@@ -259,7 +259,10 @@ export async function POST(req: NextRequest) {
 
     if (error instanceof z.ZodError) {
       console.error("Zod validation error details:", error.errors);
-      return new Response("Invalid request data", { status: 400 });
+      // Echo back the first error path for easier client debugging in test page
+      const first = error.errors?.[0];
+      const detail = first ? `${first.message} at ${first.path?.join('.')}` : 'Invalid request data';
+      return new Response(`Invalid request data: ${detail}` , { status: 400 });
     }
 
     return new Response("Internal server error", { status: 500 });

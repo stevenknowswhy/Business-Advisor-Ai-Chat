@@ -86,6 +86,12 @@ export function useAdvisorChat(conversationId?: string) {
       setInput("");
 
       // Call the chat API
+      console.log('Calling chat API with:', {
+        messages: newMessages,
+        conversationId,
+        advisorId: activeAdvisorId,
+      });
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -98,11 +104,17 @@ export function useAdvisorChat(conversationId?: string) {
         }),
       });
 
+      console.log('Chat API response status:', response.status);
+      console.log('Chat API response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        throw new Error(`Chat API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Chat API error response:', errorText);
+        throw new Error(`Chat API error: ${response.status} - ${errorText}`);
       }
 
-      // Handle streaming response
+      // Handle streaming response from AI SDK
+      console.log('Starting to read streaming response...');
       const reader = response.body?.getReader();
       if (!reader) {
         throw new Error('No response body');
@@ -114,38 +126,38 @@ export function useAdvisorChat(conversationId?: string) {
         content: "",
       };
 
+      console.log('Adding assistant message to state:', assistantMessage);
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Read the stream
+      // Read the stream - AI SDK returns plain text chunks, not JSON
+      const decoder = new TextDecoder();
+      let chunkCount = 0;
+
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = new TextDecoder().decode(value);
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') break;
-
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.choices?.[0]?.delta?.content) {
-                assistantMessage.content += parsed.choices[0].delta.content;
-                setMessages(prev =>
-                  prev.map(msg =>
-                    msg.id === assistantMessage.id
-                      ? { ...msg, content: assistantMessage.content }
-                      : msg
-                  )
-                );
-              }
-            } catch (e) {
-              // Ignore parsing errors for non-JSON lines
-            }
-          }
+        if (done) {
+          console.log('Stream reading completed. Total chunks:', chunkCount);
+          break;
         }
+
+        chunkCount++;
+        // Decode the chunk and add to buffer
+        const chunk = decoder.decode(value, { stream: true });
+        console.log(`Chunk ${chunkCount}:`, chunk);
+
+        // For AI SDK text streaming, we can directly append the chunk to content
+        assistantMessage.content += chunk;
+
+        console.log('Updated assistant message content:', assistantMessage.content);
+
+        // Update the message in state
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === assistantMessage.id
+              ? { ...msg, content: assistantMessage.content }
+              : msg
+          )
+        );
       }
     } catch (err) {
       console.error('Chat error:', err);

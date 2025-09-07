@@ -6,7 +6,6 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
   "/test-chat(.*)",
   "/api/webhooks(.*)",
-  "/api/chat(.*)",
   "/api/chat-minimal(.*)",
   "/api/test-simple(.*)",
   "/api/debug-env(.*)",

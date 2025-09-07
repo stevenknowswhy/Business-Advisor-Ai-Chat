@@ -19,17 +19,20 @@ const config = {
     const cspDirectives = [
       "default-src 'self'",
       isDev
-        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://clerk.com"
-        : "script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.com",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "font-src 'self' https://fonts.gstatic.com",
+        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://clerk.com https://*.vercel.app"
+        : "script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.com https://*.vercel.app",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.clerk.accounts.dev",
+      "font-src 'self' https://fonts.gstatic.com https://*.clerk.accounts.dev",
       "img-src 'self' data: https: blob:",
-      "connect-src 'self' https://api.clerk.com https://clerk.com https://*.clerk.accounts.dev https://openrouter.ai https://x6amvsxo6a.ufs.sh wss: ws:",
-      "worker-src 'self' blob:", // Allow web workers with blob URLs for Clerk
-      "frame-src 'self' https://challenges.cloudflare.com",
+      "connect-src 'self' https://api.clerk.com https://clerk.com https://*.clerk.accounts.dev https://openrouter.ai https://x6amvsxo6a.ufs.sh wss: ws: https://*.vercel.app",
+      "worker-src 'self' blob: https://*.clerk.accounts.dev", // Enhanced worker support for Clerk
+      "child-src 'self' blob: https://*.clerk.accounts.dev", // Allow child contexts for Clerk
+      "frame-src 'self' https://challenges.cloudflare.com https://*.clerk.accounts.dev",
+      "manifest-src 'self'", // Allow web app manifest
+      "media-src 'self' blob: data:",
       "object-src 'none'",
       "base-uri 'self'",
-      "form-action 'self'",
+      "form-action 'self' https://*.clerk.accounts.dev",
       "frame-ancestors 'none'",
       isDev ? "report-uri /api/csp-report" : "",
       isDev ? "" : "upgrade-insecure-requests"

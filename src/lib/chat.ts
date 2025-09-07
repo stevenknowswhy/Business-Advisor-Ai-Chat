@@ -113,11 +113,20 @@ export function useAdvisorChat(conversationId?: string) {
         throw new Error(`Chat API error: ${response.status} - ${errorText}`);
       }
 
+      // Check if response has a body
+      if (!response.body) {
+        console.error('No response body received from chat API');
+        throw new Error('No response body received from chat API');
+      }
+
       // Handle streaming response from AI SDK
       console.log('Starting to read streaming response...');
+      console.log('Response content-type:', response.headers.get('content-type'));
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
       const reader = response.body?.getReader();
       if (!reader) {
-        throw new Error('No response body');
+        throw new Error('No response body reader available');
       }
 
       const assistantMessage = {
@@ -132,29 +141,31 @@ export function useAdvisorChat(conversationId?: string) {
       // Read the stream - AI SDK returns plain text chunks, not JSON
       const decoder = new TextDecoder();
       let chunkCount = 0;
+      let accumulatedContent = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
           console.log('Stream reading completed. Total chunks:', chunkCount);
+          console.log('Final accumulated content:', accumulatedContent);
           break;
         }
 
         chunkCount++;
         // Decode the chunk and add to buffer
         const chunk = decoder.decode(value, { stream: true });
-        console.log(`Chunk ${chunkCount}:`, chunk);
+        console.log(`Chunk ${chunkCount}:`, JSON.stringify(chunk));
 
-        // For AI SDK text streaming, we can directly append the chunk to content
-        assistantMessage.content += chunk;
+        // Accumulate content without mutating the original object
+        accumulatedContent += chunk;
 
-        console.log('Updated assistant message content:', assistantMessage.content);
+        console.log('Accumulated content so far:', accumulatedContent);
 
-        // Update the message in state
+        // Update the message in state with new content
         setMessages(prev =>
           prev.map(msg =>
             msg.id === assistantMessage.id
-              ? { ...msg, content: assistantMessage.content }
+              ? { ...msg, content: accumulatedContent }
               : msg
           )
         );

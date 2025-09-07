@@ -155,6 +155,8 @@ export function MessageInput({
       <form onSubmit={handleSubmit} className="flex items-end space-x-3">
         <div className="flex-1 relative">
           <textarea
+            id="chat-message-input"
+            name="message"
             ref={textareaRef}
             value={input}
             onChange={handleInputChangeWithMentions}
@@ -163,6 +165,8 @@ export function MessageInput({
             disabled={isLoading}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] max-h-32"
             rows={1}
+            autoComplete="off"
+            aria-label="Chat message input"
           />
           
           {/* Character count */}

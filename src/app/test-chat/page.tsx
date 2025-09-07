@@ -29,7 +29,11 @@ export default function TestChatPage() {
 
     try {
       const testPayload = {
-        messages: [{ role: 'user', content: 'Hello, this is a test message' }],
+        messages: [{
+          id: Date.now().toString(),
+          role: 'user',
+          content: 'Hello, this is a test message'
+        }],
         conversationId: null,
         advisorId: 'alex-reyes-v3'
       };
@@ -50,6 +54,7 @@ export default function TestChatPage() {
       if (!response.ok) {
         const errorText = await response.text();
         addLog(`Error response body: ${errorText}`);
+        addLog(`This is likely a validation error. Check if the message format matches the API schema.`);
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
@@ -104,6 +109,7 @@ export default function TestChatPage() {
       <div className="mb-6">
         <p className="mb-2">User: {user.emailAddresses[0]?.emailAddress}</p>
         <button
+          type="button"
           onClick={testChatAPI}
           disabled={loading}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"

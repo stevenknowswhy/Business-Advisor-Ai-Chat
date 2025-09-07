@@ -2,9 +2,10 @@ import { streamText, generateText } from "ai";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 
+import { createOpenAI } from "@ai-sdk/openai";
 import { requireUser } from "~/server/auth/require-user";
 import { db } from "~/server/db";
-import { openrouter, getModelForTier } from "~/server/llm/openrouter";
+import { getModelForTier } from "~/server/llm/openrouter";
 import { generateSystemPrompt, generateConversationContext, generateUserMessage, extractMentions } from "~/server/llm/prompt";
 import { getActiveAdvisors, getAdvisorById } from "~/server/advisors/persona";
 
@@ -246,14 +247,26 @@ export async function POST(req: NextRequest) {
     console.log("AI Messages preview:", JSON.stringify(aiMessages.map(m => ({ role: m.role, contentLength: m.content.length })), null, 2));
 
     try {
+      // CRITICAL FIX: Create OpenRouter client directly with process.env to bypass env import issues
+      console.log("Step 7a: Creating OpenRouter client directly with process.env...");
+      const openrouterClient = createOpenAI({
+        apiKey: apiKey,
+        baseURL: "https://openrouter.ai/api/v1",
+        headers: {
+          "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
+          "X-Title": "AI Advisor Chat",
+        },
+      });
+      console.log("Step 7a: OpenRouter client created successfully");
+
       // DIAGNOSTIC: Test non-streaming first to isolate the issue
-      console.log("Step 7a-DIAGNOSTIC: Testing non-streaming generateText with original openrouter client...");
+      console.log("Step 7b-DIAGNOSTIC: Testing non-streaming generateText...");
       const diagnosticResult = await generateText({
-        model: openrouter.languageModel(model),
+        model: openrouterClient.languageModel(model),
         messages: aiMessages,
         temperature: 0.7,
       });
-      console.log("Step 7a-DIAGNOSTIC Results:");
+      console.log("Step 7b-DIAGNOSTIC Results:");
       console.log("- Text length:", diagnosticResult.text?.length || 0);
       console.log("- Text preview:", diagnosticResult.text?.substring(0, 100) || '(empty)');
       console.log("- Finish reason:", diagnosticResult.finishReason);
@@ -261,7 +274,7 @@ export async function POST(req: NextRequest) {
 
       // If diagnostic works, return simple response for now
       if (diagnosticResult.text && diagnosticResult.text.length > 0) {
-        console.log("Step 7a-DIAGNOSTIC: SUCCESS - returning non-streaming response");
+        console.log("Step 7b-DIAGNOSTIC: SUCCESS - returning non-streaming response");
 
         // Save the response to database
         try {
@@ -279,9 +292,9 @@ export async function POST(req: NextRequest) {
               },
             },
           });
-          console.log("Step 7a-DIAGNOSTIC: Response saved to database");
+          console.log("Step 7b-DIAGNOSTIC: Response saved to database");
         } catch (dbError) {
-          console.error("Step 7a-DIAGNOSTIC: Database save error:", dbError);
+          console.error("Step 7b-DIAGNOSTIC: Database save error:", dbError);
         }
 
         return new Response(diagnosticResult.text, {
@@ -295,11 +308,11 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      console.log("Step 7a-DIAGNOSTIC: Non-streaming failed, trying streaming...");
+      console.log("Step 7b-DIAGNOSTIC: Non-streaming failed, trying streaming...");
       // Stream response
-      console.log("Step 7b: Creating streamText instance...");
+      console.log("Step 7c: Creating streamText instance...");
       const result = streamText({
-        model: openrouter.languageModel(model),
+        model: openrouterClient.languageModel(model),
         messages: aiMessages,
         temperature: 0.7,
         onFinish: async (result) => {

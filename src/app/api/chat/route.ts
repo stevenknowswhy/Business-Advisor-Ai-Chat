@@ -1,4 +1,5 @@
 import { streamText, generateText } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 
@@ -7,6 +8,9 @@ import { db } from "~/server/db";
 import { openrouter, getModelForTier } from "~/server/llm/openrouter";
 import { generateSystemPrompt, generateConversationContext, generateUserMessage, extractMentions } from "~/server/llm/prompt";
 import { getActiveAdvisors, getAdvisorById } from "~/server/advisors/persona";
+
+// CRITICAL: Force Node.js runtime for Prisma and streaming compatibility
+export const runtime = "nodejs";
 
 // Request schema validation for AI SDK format
 const chatRequestSchema = z.object({
@@ -178,14 +182,94 @@ export async function POST(req: NextRequest) {
     console.log("Model:", model);
     console.log("OpenRouter API Key present:", !!process.env.OPENROUTER_API_KEY);
     console.log("OpenRouter API Key length:", process.env.OPENROUTER_API_KEY?.length || 0);
+    console.log("APP_URL:", process.env.APP_URL || 'undefined');
+    console.log("NODE_ENV:", process.env.NODE_ENV || 'undefined');
+
+    // Critical check: If no API key, fail fast with detailed error
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      console.error("CRITICAL ERROR: OPENROUTER_API_KEY is missing in production environment");
+      console.error("Available env vars:", Object.keys(process.env).filter(k => k.includes('OPENROUTER')));
+      return new Response("Configuration error: Missing OpenRouter API key", {
+        status: 500,
+        headers: {
+          "X-Error": "Missing-API-Key",
+          "X-Conversation-Id": conversation.id,
+          "X-Active-Advisor": activeAdvisor.id,
+        }
+      });
+    }
+
     console.log("AI Messages count:", aiMessages.length);
     console.log("AI Messages preview:", JSON.stringify(aiMessages.map(m => ({ role: m.role, contentLength: m.content.length })), null, 2));
 
     try {
+      // CRITICAL FIX: Create OpenRouter client with direct environment variables
+      console.log("Step 7a: Creating OpenRouter client with direct env vars...");
+      const openrouterClient = createOpenAI({
+        apiKey: apiKey,
+        baseURL: "https://openrouter.ai/api/v1",
+        headers: {
+          "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
+          "X-Title": "AI Advisor Chat",
+        },
+      });
+      console.log("Step 7a: OpenRouter client created successfully");
+
+      // DIAGNOSTIC: Test non-streaming first to isolate the issue
+      console.log("Step 7b-DIAGNOSTIC: Testing non-streaming generateText...");
+      const diagnosticResult = await generateText({
+        model: openrouterClient.languageModel(model),
+        messages: aiMessages,
+        temperature: 0.7,
+      });
+      console.log("Step 7b-DIAGNOSTIC Results:");
+      console.log("- Text length:", diagnosticResult.text?.length || 0);
+      console.log("- Text preview:", diagnosticResult.text?.substring(0, 100) || '(empty)');
+      console.log("- Finish reason:", diagnosticResult.finishReason);
+      console.log("- Usage:", JSON.stringify(diagnosticResult.usage));
+
+      // If diagnostic works, return simple response for now
+      if (diagnosticResult.text && diagnosticResult.text.length > 0) {
+        console.log("Step 7b-DIAGNOSTIC: SUCCESS - returning non-streaming response");
+
+        // Save the response to database
+        try {
+          await db.message.create({
+            data: {
+              conversationId: conversation.id,
+              sender: "advisor",
+              advisorId: activeAdvisor.id,
+              content: diagnosticResult.text,
+              tokensUsed: diagnosticResult.usage?.totalTokens,
+              contentJson: {
+                usage: diagnosticResult.usage,
+                model,
+                finishReason: diagnosticResult.finishReason,
+              },
+            },
+          });
+          console.log("Step 7b-DIAGNOSTIC: Response saved to database");
+        } catch (dbError) {
+          console.error("Step 7b-DIAGNOSTIC: Database save error:", dbError);
+        }
+
+        return new Response(diagnosticResult.text, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/plain",
+            "X-Conversation-Id": conversation.id,
+            "X-Active-Advisor": activeAdvisor.id,
+            "X-Diagnostic": "non-streaming-success",
+          },
+        });
+      }
+
+      console.log("Step 7b-DIAGNOSTIC: Non-streaming failed, trying streaming...");
       // Stream response
-      console.log("Step 7a: Creating streamText instance...");
+      console.log("Step 7c: Creating streamText instance...");
       const result = streamText({
-        model: openrouter.languageModel(model),
+        model: openrouterClient.languageModel(model),
         messages: aiMessages,
         temperature: 0.7,
         onFinish: async (result) => {

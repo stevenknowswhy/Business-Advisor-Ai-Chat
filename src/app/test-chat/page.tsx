@@ -12,6 +12,7 @@ export default function TestChatPage() {
   const [advisorId, setAdvisorId] = useState<string>('alex-reyes-v3');
   const [messageText, setMessageText] = useState<string>('Hello, this is a test message');
 
+
   const addLog = (message: string) => {
     setLogs(prev => [...prev, `${new Date().toISOString()}: ${message}`]);
   };
@@ -26,7 +27,7 @@ export default function TestChatPage() {
     setError('');
     setResponse('');
     setLogs([]);
-    
+
     addLog('Starting chat API test...');
 
     try {
@@ -113,7 +114,7 @@ export default function TestChatPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Chat API Test Page</h1>
-      
+
       <div className="mb-6 space-y-3">
         <p className="mb-2">User: {user.emailAddresses[0]?.emailAddress}</p>
         <div className="flex gap-3 items-center">

@@ -9,6 +9,8 @@ export default function TestChatPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [logs, setLogs] = useState<string[]>([]);
+  const [advisorId, setAdvisorId] = useState<string>('alex-reyes-v3');
+  const [messageText, setMessageText] = useState<string>('Hello, this is a test message');
 
   const addLog = (message: string) => {
     setLogs(prev => [...prev, `${new Date().toISOString()}: ${message}`]);
@@ -28,15 +30,20 @@ export default function TestChatPage() {
     addLog('Starting chat API test...');
 
     try {
-      const testPayload = {
+      const testPayload: any = {
         messages: [{
           id: Date.now().toString(),
           role: 'user',
-          content: 'Hello, this is a test message'
+          content: messageText
         }],
-        conversationId: null,
-        advisorId: 'alex-reyes-v3'
+        advisorId
       };
+
+      // Drop conversationId if null to avoid schema surprises
+      // (schema allows optional string; sending null may cause issues in some runtimes)
+      // If you want to test an existing conversation, add its string id below.
+      const conversationId: string | undefined = undefined;
+      if (conversationId) testPayload.conversationId = conversationId;
 
       addLog(`Sending request to /api/chat with payload: ${JSON.stringify(testPayload)}`);
 
@@ -54,7 +61,8 @@ export default function TestChatPage() {
       if (!response.ok) {
         const errorText = await response.text();
         addLog(`Error response body: ${errorText}`);
-        addLog(`This is likely a validation error. Check if the message format matches the API schema.`);
+        addLog(`If this mentions a field and path, fix that field and retry.`);
+        setError(errorText);
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
@@ -106,8 +114,26 @@ export default function TestChatPage() {
     <div className="p-8 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Chat API Test Page</h1>
       
-      <div className="mb-6">
+      <div className="mb-6 space-y-3">
         <p className="mb-2">User: {user.emailAddresses[0]?.emailAddress}</p>
+        <div className="flex gap-3 items-center">
+          <label className="w-32">Advisor ID</label>
+          <input
+            className="border rounded px-2 py-1 flex-1"
+            value={advisorId}
+            onChange={(e) => setAdvisorId(e.target.value)}
+            placeholder="e.g., alex-reyes-v3"
+          />
+        </div>
+        <div className="flex gap-3 items-center">
+          <label className="w-32">Message</label>
+          <input
+            className="border rounded px-2 py-1 flex-1"
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
+            placeholder="Type a test message"
+          />
+        </div>
         <button
           type="button"
           onClick={testChatAPI}

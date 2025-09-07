@@ -124,6 +124,14 @@ export async function POST(req: NextRequest) {
 
     // Get model for user's tier
     const model = getModelForTier(user.plan);
+    console.log("Chat API: User plan:", user.plan);
+    console.log("Chat API: Selected model:", model);
+
+    // Debug logging
+    console.log("Chat API: Starting AI generation");
+    console.log("Model:", model);
+    console.log("AI Messages:", JSON.stringify(aiMessages, null, 2));
+    console.log("OpenRouter API Key present:", !!process.env.OPENROUTER_API_KEY);
 
     // Stream response
     const result = streamText({
@@ -131,6 +139,10 @@ export async function POST(req: NextRequest) {
       messages: aiMessages,
       temperature: 0.7,
       onFinish: async (result) => {
+        console.log("Chat API: AI generation finished");
+        console.log("Result text length:", result.text?.length || 0);
+        console.log("Usage:", result.usage);
+
         // Save advisor response
         await db.message.create({
           data: {
@@ -147,8 +159,12 @@ export async function POST(req: NextRequest) {
           },
         });
       },
+      onError: (error) => {
+        console.error("Chat API: AI generation error:", error);
+      },
     });
 
+    console.log("Chat API: Returning streaming response");
     return result.toTextStreamResponse({
       headers: {
         "X-Conversation-Id": conversation.id,

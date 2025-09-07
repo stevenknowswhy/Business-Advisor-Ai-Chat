@@ -190,19 +190,42 @@ export function useAdvisorChat(conversationId?: string) {
 
   const extractMentions = useCallback((text: string, availableAdvisors: Advisor[]): string[] => {
     const mentions: string[] = [];
-    const mentionRegex = /@(\w+(?:\s+\w+)*)/gi;
-    let match;
+    const advisorNames = availableAdvisors.map(advisor => ({
+      id: advisor.id,
+      name: advisor.name.toLowerCase(),
+      firstName: advisor.name.split(' ')[0]?.toLowerCase(),
+    }));
 
-    while ((match = mentionRegex.exec(text)) !== null) {
+    // Look for @mentions in the content - try both single word and two word patterns
+    const singleWordRegex = /@(\w+)\b/gi;
+    const twoWordRegex = /@(\w+\s+\w+)\b/gi;
+
+    // First try two-word matches (full names)
+    let match;
+    while ((match = twoWordRegex.exec(text)) !== null) {
       const mentionText = match[1]?.toLowerCase();
-      
-      const matchedAdvisor = availableAdvisors.find(advisor =>
-        advisor.name.toLowerCase().includes(mentionText || "") ||
-        advisor.name.split(' ')[0]?.toLowerCase() === mentionText
+
+      const matchedAdvisor = advisorNames.find(advisor =>
+        advisor.name === mentionText
       );
 
       if (matchedAdvisor && !mentions.includes(matchedAdvisor.id)) {
         mentions.push(matchedAdvisor.id);
+      }
+    }
+
+    // If no two-word matches, try single word matches (first names)
+    if (mentions.length === 0) {
+      while ((match = singleWordRegex.exec(text)) !== null) {
+        const mentionText = match[1]?.toLowerCase();
+
+        const matchedAdvisor = advisorNames.find(advisor =>
+          advisor.firstName === mentionText
+        );
+
+        if (matchedAdvisor && !mentions.includes(matchedAdvisor.id)) {
+          mentions.push(matchedAdvisor.id);
+        }
       }
     }
 

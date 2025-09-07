@@ -1,0 +1,22 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "devCommand": "npm run dev",
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "OPENROUTER_API_KEY": "@openrouter_api_key",
+    "APP_URL": "@app_url",
+    "OPENROUTER_FREE_MODEL": "@openrouter_free_model",
+    "OPENROUTER_BASE_MODEL": "@openrouter_base_model",
+    "OPENROUTER_PREMIUM_MODEL": "@openrouter_premium_model",
+    "CLERK_SECRET_KEY": "@clerk_secret_key",
+    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": "@clerk_publishable_key"
+  },
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "runtime": "nodejs20.x"
+    }
+  }
+}

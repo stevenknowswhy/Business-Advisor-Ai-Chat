@@ -247,125 +247,104 @@ export async function POST(req: NextRequest) {
     console.log("AI Messages preview:", JSON.stringify(aiMessages.map(m => ({ role: m.role, contentLength: m.content.length })), null, 2));
 
     try {
-      // CRITICAL FIX: Create OpenRouter client directly with process.env (same as chat-minimal)
-      console.log("Step 7a: Creating OpenRouter client directly with process.env...");
-      const openrouterClient = createOpenAI({
-        apiKey: apiKey,
-        baseURL: "https://openrouter.ai/api/v1",
+      // CRITICAL FIX: Use direct fetch approach (same as chat-minimal) instead of AI SDK
+      console.log("Step 7a: Testing direct OpenRouter API call (same as chat-minimal)...");
+
+      const directResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
         headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
           "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
           "X-Title": "AI Advisor Chat",
         },
+        body: JSON.stringify({
+          model: model,
+          messages: aiMessages,
+          temperature: 0.7,
+          max_tokens: 2000,
+        }),
       });
-      console.log("Step 7a: OpenRouter client created successfully");
 
-      // DIAGNOSTIC: Test non-streaming first to isolate the issue
-      console.log("Step 7b-DIAGNOSTIC: Testing non-streaming generateText...");
-      const diagnosticResult = await generateText({
-        model: openrouterClient.languageModel(model),
-        messages: aiMessages,
-        temperature: 0.7,
-      });
-      console.log("Step 7b-DIAGNOSTIC Results:");
-      console.log("- Text length:", diagnosticResult.text?.length || 0);
-      console.log("- Text preview:", diagnosticResult.text?.substring(0, 100) || '(empty)');
-      console.log("- Finish reason:", diagnosticResult.finishReason);
-      console.log("- Usage:", JSON.stringify(diagnosticResult.usage));
+      console.log("Step 7b: Direct API response status:", directResponse.status);
+      console.log("Step 7c: Direct API response headers:", Object.fromEntries(directResponse.headers.entries()));
 
-      // If diagnostic works, return simple response for now
-      if (diagnosticResult.text && diagnosticResult.text.length > 0) {
-        console.log("Step 7b-DIAGNOSTIC: SUCCESS - returning non-streaming response");
+      const responseText = await directResponse.text();
+      console.log("Step 7d: Direct API response text (first 500 chars):", responseText.substring(0, 500));
 
-        // Save the response to database
-        try {
-          await db.message.create({
-            data: {
-              conversationId: conversation.id,
-              sender: "advisor",
-              advisorId: activeAdvisor.id,
-              content: diagnosticResult.text,
-              tokensUsed: diagnosticResult.usage?.totalTokens,
-              contentJson: {
-                usage: diagnosticResult.usage,
-                model,
-                finishReason: diagnosticResult.finishReason,
-              },
-            },
-          });
-          console.log("Step 7b-DIAGNOSTIC: Response saved to database");
-        } catch (dbError) {
-          console.error("Step 7b-DIAGNOSTIC: Database save error:", dbError);
-        }
-
-        return new Response(diagnosticResult.text, {
-          status: 200,
-          headers: {
-            "Content-Type": "text/plain",
-            "X-Conversation-Id": conversation.id,
-            "X-Active-Advisor": activeAdvisor.id,
-            "X-Diagnostic": "non-streaming-success",
-          },
+      if (!directResponse.ok) {
+        console.error("Step 7 FAILED: Direct API test failed:", directResponse.status, responseText);
+        return new Response(`Direct API test failed: ${directResponse.status} - ${responseText}`, {
+          status: 500,
+          headers: { "X-Error": "OpenRouter-API-Failed" }
         });
       }
 
-      console.log("Step 7b-DIAGNOSTIC: Non-streaming failed, trying streaming...");
-      // Stream response
-      console.log("Step 7c: Creating streamText instance...");
-      const result = streamText({
-        model: openrouterClient.languageModel(model),
-        messages: aiMessages,
-        temperature: 0.7,
-        onFinish: async (result) => {
-          console.log("=== AI GENERATION FINISHED ===");
-          console.log("Result text length:", result.text?.length || 0);
-          console.log("Result text preview:", result.text?.substring(0, 100) + "...");
-          console.log("Usage:", result.usage);
-          console.log("Finish reason:", result.finishReason);
+      // Parse the JSON response
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+        console.log("Step 7e: Response parsed successfully");
+        console.log("- Choices count:", responseData.choices?.length);
+        console.log("- Usage:", responseData.usage);
+      } catch (parseError: any) {
+        console.error("Step 7 FAILED: JSON parse error:", parseError.message);
+        return new Response(`JSON parse error: ${parseError.message}`, {
+          status: 500,
+          headers: { "X-Error": "JSON-Parse-Failed" }
+        });
+      }
 
-          try {
-            // Save advisor response
-            console.log("Saving advisor response to database...");
-            await db.message.create({
-              data: {
-                conversationId: conversation.id,
-                sender: "advisor",
-                advisorId: activeAdvisor.id,
-                content: result.text,
-                tokensUsed: result.usage?.totalTokens,
-                contentJson: {
-                  usage: result.usage,
-                  model,
-                  finishReason: result.finishReason,
-                },
-              },
-            });
-            console.log("Advisor response saved successfully");
-          } catch (dbError) {
-            console.error("Database save error:", dbError);
-          }
-        },
-        onError: (error) => {
-          console.error("=== AI GENERATION ERROR ===");
-          console.error("Full error object:", error);
-          if (error.error) {
-            console.error("Nested error:", error.error);
-          }
-        },
-      });
+      // Extract the response content
+      const assistantMessage = responseData.choices?.[0]?.message?.content;
+      if (!assistantMessage) {
+        console.error("Step 7 FAILED: No assistant message in response");
+        return new Response("No assistant message in response", {
+          status: 500,
+          headers: { "X-Error": "No-Assistant-Message" }
+        });
+      }
 
-      console.log("Step 7b: streamText instance created successfully");
-      console.log("Step 7c: Converting to text stream response...");
+      console.log("Step 7 SUCCESS: AI response generated!");
+      console.log("- Response length:", assistantMessage.length);
+      console.log("- Tokens used:", responseData.usage?.total_tokens);
+      console.log("- Response preview:", assistantMessage.substring(0, 200) + "...");
 
-      const response = result.toTextStreamResponse({
+      // Save the AI response to database
+      console.log("Step 7f: Saving AI response to database...");
+      try {
+        await db.message.create({
+          data: {
+            conversationId: conversation.id,
+            sender: "advisor",
+            advisorId: activeAdvisor.id,
+            content: assistantMessage,
+            tokensUsed: responseData.usage?.total_tokens,
+            contentJson: {
+              usage: responseData.usage,
+              model,
+              finishReason: responseData.choices?.[0]?.finish_reason,
+            },
+          },
+        });
+        console.log("Step 7f SUCCESS: AI response saved to database");
+      } catch (dbError: any) {
+        console.error("Step 7f WARNING: Database save error:", dbError.message);
+        // Don't fail the request if database save fails
+      }
+
+      // Return the response as plain text for testing
+      return new Response(assistantMessage, {
+        status: 200,
         headers: {
+          "Content-Type": "text/plain",
           "X-Conversation-Id": conversation.id,
           "X-Active-Advisor": activeAdvisor.id,
+          "X-Tokens-Used": responseData.usage?.total_tokens?.toString() || "0",
         },
       });
 
-      console.log("Step 7 SUCCESS: Returning streaming response");
-      console.log("=== CHAT API END (SUCCESS) ===");
-      return response;
+
 
     } catch (aiError: any) {
       console.error("=== CRITICAL AI GENERATION ERROR ===");

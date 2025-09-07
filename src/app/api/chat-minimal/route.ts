@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
         const aiResponseText = parsedResponse.choices?.[0]?.message?.content || "No response content";
         console.log("Step 5f: AI response text:", aiResponseText.substring(0, 200));
 
-        return new Response(aiResponseText, {
+        return new Response(aiResponseText as string, {
           status: 200,
           headers: {
             "Content-Type": "text/plain",
@@ -119,26 +119,6 @@ export async function POST(req: NextRequest) {
         }
       });
     }
-    console.log("Step 5 SUCCESS: AI response received");
-    console.log("- Text length:", result.text?.length || 0);
-    console.log("- Text preview:", result.text?.substring(0, 100) || '(empty)');
-    console.log("- Finish reason:", result.finishReason);
-    console.log("- Usage:", JSON.stringify(result.usage));
-
-    if (!result.text || result.text.length === 0) {
-      console.error("Step 5 FAILED: Empty AI response");
-      return new Response("Empty AI response", { status: 500 });
-    }
-
-    console.log("Step 6: Returning response...");
-    return new Response(result.text, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/plain",
-        "X-Test": "minimal-chat-success",
-        "X-Text-Length": result.text.length.toString(),
-      },
-    });
 
   } catch (error: any) {
     console.error("MINIMAL CHAT ERROR:", error.message);

@@ -25,6 +25,7 @@ const config = {
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: https: blob:",
       "connect-src 'self' https://api.clerk.com https://clerk.com https://*.clerk.accounts.dev https://openrouter.ai https://x6amvsxo6a.ufs.sh wss: ws:",
+      "worker-src 'self' blob:", // Allow web workers with blob URLs for Clerk
       "frame-src 'self' https://challenges.cloudflare.com",
       "object-src 'none'",
       "base-uri 'self'",

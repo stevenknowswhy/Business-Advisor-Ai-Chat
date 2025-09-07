@@ -213,11 +213,11 @@ export async function POST(req: NextRequest) {
     ];
     console.log("Step 6d: AI messages prepared, total count:", aiMessages.length);
 
-    // Get model for user's tier
-    const model = getModelForTier(user.plan);
+    // Use the verified working model directly (same as chat-minimal)
+    const model = "x-ai/grok-code-fast-1";
     console.log("Step 6 SUCCESS: Model selection complete");
     console.log("- User plan:", user.plan);
-    console.log("- Selected model:", model);
+    console.log("- Selected model:", model, "(using verified working model)");
     console.log("- Model available in env:", !!model);
 
     console.log("Step 7: Starting AI generation...");
@@ -247,7 +247,7 @@ export async function POST(req: NextRequest) {
     console.log("AI Messages preview:", JSON.stringify(aiMessages.map(m => ({ role: m.role, contentLength: m.content.length })), null, 2));
 
     try {
-      // CRITICAL FIX: Create OpenRouter client directly with process.env to bypass env import issues
+      // CRITICAL FIX: Create OpenRouter client directly with process.env (same as chat-minimal)
       console.log("Step 7a: Creating OpenRouter client directly with process.env...");
       const openrouterClient = createOpenAI({
         apiKey: apiKey,

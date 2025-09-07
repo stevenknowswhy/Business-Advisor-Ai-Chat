@@ -1,4 +1,4 @@
-import { streamText } from "ai";
+import { streamText, generateText } from "ai";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 

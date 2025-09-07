@@ -11,9 +11,12 @@ const createConversationSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  console.log("=== CONVERSATIONS API START ===");
+  console.log("Request URL:", req.url);
+
   try {
     const user = await requireUser();
-    
+
     const conversations = await db.conversation.findMany({
       where: { userId: user.id },
       include: {
@@ -50,6 +53,7 @@ export async function GET(req: NextRequest) {
     }));
 
     return Response.json(formattedConversations);
+
 
   } catch (error) {
     console.error("Get conversations error:", error);

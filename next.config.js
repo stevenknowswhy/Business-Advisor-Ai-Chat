@@ -24,7 +24,7 @@ const config = {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.clerk.accounts.dev",
       "font-src 'self' https://fonts.gstatic.com https://*.clerk.accounts.dev",
       "img-src 'self' data: https: blob:",
-      "connect-src 'self' https://api.clerk.com https://clerk.com https://*.clerk.accounts.dev https://openrouter.ai https://x6amvsxo6a.ufs.sh wss: ws: https://*.vercel.app",
+      "connect-src 'self' https://api.clerk.com https://clerk.com https://*.clerk.accounts.dev https://clerk-telemetry.com https://openrouter.ai https://x6amvsxo6a.ufs.sh wss: ws: https://*.vercel.app",
       "worker-src 'self' blob: https://*.clerk.accounts.dev", // Enhanced worker support for Clerk
       "child-src 'self' blob: https://*.clerk.accounts.dev", // Allow child contexts for Clerk
       "frame-src 'self' https://challenges.cloudflare.com https://*.clerk.accounts.dev",

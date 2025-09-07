@@ -1,5 +1,4 @@
 import { streamText, generateText } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 
@@ -37,19 +36,43 @@ export async function POST(req: NextRequest) {
   try {
     console.log("Step 1: Authenticating user...");
     // Authenticate user
-    const user = await requireUser();
-    console.log("Step 1 SUCCESS: User authenticated:", user.id, user.plan);
+    let user;
+    try {
+      user = await requireUser();
+      console.log("Step 1 SUCCESS: User authenticated:", user.id, user.plan);
+    } catch (authError: any) {
+      console.error("Step 1 FAILED: Authentication error:", authError.message);
+      console.error("Auth error stack:", authError.stack);
+      return new Response("Authentication failed", {
+        status: 401,
+        headers: { "X-Error": "Authentication-Failed" }
+      });
+    }
 
     console.log("Step 2: Parsing request body...");
     // Parse and validate request
-    const body = await req.json();
-    console.log("Step 2a: Raw body received:", JSON.stringify(body, null, 2));
+    let body, messages, conversationId, advisorId;
+    try {
+      body = await req.json();
+      console.log("Step 2a: Raw body received:", JSON.stringify(body, null, 2));
 
-    const { messages, conversationId, advisorId } = chatRequestSchema.parse(body);
-    console.log("Step 2 SUCCESS: Request parsed and validated");
-    console.log("- Messages count:", messages.length);
-    console.log("- Conversation ID:", conversationId);
-    console.log("- Advisor ID:", advisorId);
+      const parsed = chatRequestSchema.parse(body);
+      messages = parsed.messages;
+      conversationId = parsed.conversationId;
+      advisorId = parsed.advisorId;
+
+      console.log("Step 2 SUCCESS: Request parsed and validated");
+      console.log("- Messages count:", messages.length);
+      console.log("- Conversation ID:", conversationId);
+      console.log("- Advisor ID:", advisorId);
+    } catch (parseError: any) {
+      console.error("Step 2 FAILED: Request parsing error:", parseError.message);
+      console.error("Parse error stack:", parseError.stack);
+      return new Response("Invalid request format", {
+        status: 400,
+        headers: { "X-Error": "Request-Parse-Failed" }
+      });
+    }
 
     // Get the latest user message
     const userMessages = messages.filter(m => m.role === "user");
@@ -63,12 +86,22 @@ export async function POST(req: NextRequest) {
 
     console.log("Step 3: Getting advisors and processing mentions...");
     // Get available advisors for mention parsing
-    const availableAdvisors = await getActiveAdvisors();
-    console.log("Step 3a: Available advisors count:", availableAdvisors.length);
+    let availableAdvisors, mentions;
+    try {
+      availableAdvisors = await getActiveAdvisors();
+      console.log("Step 3a: Available advisors count:", availableAdvisors.length);
 
-    // Extract mentions from message
-    const mentions = extractMentions(message, availableAdvisors);
-    console.log("Step 3b: Mentions extracted:", mentions);
+      // Extract mentions from message
+      mentions = extractMentions(message, availableAdvisors);
+      console.log("Step 3b: Mentions extracted:", mentions);
+    } catch (advisorError: any) {
+      console.error("Step 3 FAILED: Advisor processing error:", advisorError.message);
+      console.error("Advisor error stack:", advisorError.stack);
+      return new Response("Advisor processing failed", {
+        status: 500,
+        headers: { "X-Error": "Advisor-Processing-Failed" }
+      });
+    }
 
     // Determine active advisor
     let activeAdvisor;
@@ -95,38 +128,47 @@ export async function POST(req: NextRequest) {
     console.log("Step 4: Getting or creating conversation...");
     // Get or create conversation
     let conversation;
-    if (conversationId) {
-      console.log("Step 4a: Finding existing conversation:", conversationId);
-      conversation = await db.conversation.findUnique({
-        where: { id: conversationId, userId: user.id },
-        include: {
-          messages: {
-            include: { advisor: true },
-            orderBy: { createdAt: "asc" },
-            take: 50, // Limit context window
+    try {
+      if (conversationId) {
+        console.log("Step 4a: Finding existing conversation:", conversationId);
+        conversation = await db.conversation.findUnique({
+          where: { id: conversationId, userId: user.id },
+          include: {
+            messages: {
+              include: { advisor: true },
+              orderBy: { createdAt: "asc" },
+              take: 50, // Limit context window
+            },
           },
-        },
-      });
+        });
 
-      if (!conversation) {
-        console.error("CRITICAL ERROR: Conversation not found:", conversationId);
-        return new Response("Conversation not found", { status: 404 });
+        if (!conversation) {
+          console.error("CRITICAL ERROR: Conversation not found:", conversationId);
+          return new Response("Conversation not found", { status: 404 });
+        }
+        console.log("Step 4a SUCCESS: Found conversation with", conversation.messages.length, "messages");
+      } else {
+        console.log("Step 4b: Creating new conversation...");
+        // Create new conversation
+        conversation = await db.conversation.create({
+          data: {
+            userId: user.id,
+            activeAdvisorId: activeAdvisor.id,
+            title: message.slice(0, 50) + (message.length > 50 ? "..." : ""),
+          },
+          include: {
+            messages: { include: { advisor: true } },
+          },
+        });
+        console.log("Step 4b SUCCESS: Created new conversation:", conversation.id);
       }
-      console.log("Step 4a SUCCESS: Found conversation with", conversation.messages.length, "messages");
-    } else {
-      console.log("Step 4b: Creating new conversation...");
-      // Create new conversation
-      conversation = await db.conversation.create({
-        data: {
-          userId: user.id,
-          activeAdvisorId: activeAdvisor.id,
-          title: message.slice(0, 50) + (message.length > 50 ? "..." : ""),
-        },
-        include: {
-          messages: { include: { advisor: true } },
-        },
+    } catch (dbError: any) {
+      console.error("Step 4 FAILED: Database operation error:", dbError.message);
+      console.error("Database error stack:", dbError.stack);
+      return new Response("Database operation failed", {
+        status: 500,
+        headers: { "X-Error": "Database-Operation-Failed" }
       });
-      console.log("Step 4b SUCCESS: Created new conversation:", conversation.id);
     }
 
     console.log("Step 5: Updating conversation and saving user message...");
@@ -204,26 +246,14 @@ export async function POST(req: NextRequest) {
     console.log("AI Messages preview:", JSON.stringify(aiMessages.map(m => ({ role: m.role, contentLength: m.content.length })), null, 2));
 
     try {
-      // CRITICAL FIX: Create OpenRouter client with direct environment variables
-      console.log("Step 7a: Creating OpenRouter client with direct env vars...");
-      const openrouterClient = createOpenAI({
-        apiKey: apiKey,
-        baseURL: "https://openrouter.ai/api/v1",
-        headers: {
-          "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
-          "X-Title": "AI Advisor Chat",
-        },
-      });
-      console.log("Step 7a: OpenRouter client created successfully");
-
       // DIAGNOSTIC: Test non-streaming first to isolate the issue
-      console.log("Step 7b-DIAGNOSTIC: Testing non-streaming generateText...");
+      console.log("Step 7a-DIAGNOSTIC: Testing non-streaming generateText with original openrouter client...");
       const diagnosticResult = await generateText({
-        model: openrouterClient.languageModel(model),
+        model: openrouter.languageModel(model),
         messages: aiMessages,
         temperature: 0.7,
       });
-      console.log("Step 7b-DIAGNOSTIC Results:");
+      console.log("Step 7a-DIAGNOSTIC Results:");
       console.log("- Text length:", diagnosticResult.text?.length || 0);
       console.log("- Text preview:", diagnosticResult.text?.substring(0, 100) || '(empty)');
       console.log("- Finish reason:", diagnosticResult.finishReason);
@@ -231,7 +261,7 @@ export async function POST(req: NextRequest) {
 
       // If diagnostic works, return simple response for now
       if (diagnosticResult.text && diagnosticResult.text.length > 0) {
-        console.log("Step 7b-DIAGNOSTIC: SUCCESS - returning non-streaming response");
+        console.log("Step 7a-DIAGNOSTIC: SUCCESS - returning non-streaming response");
 
         // Save the response to database
         try {
@@ -249,9 +279,9 @@ export async function POST(req: NextRequest) {
               },
             },
           });
-          console.log("Step 7b-DIAGNOSTIC: Response saved to database");
+          console.log("Step 7a-DIAGNOSTIC: Response saved to database");
         } catch (dbError) {
-          console.error("Step 7b-DIAGNOSTIC: Database save error:", dbError);
+          console.error("Step 7a-DIAGNOSTIC: Database save error:", dbError);
         }
 
         return new Response(diagnosticResult.text, {
@@ -265,11 +295,11 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      console.log("Step 7b-DIAGNOSTIC: Non-streaming failed, trying streaming...");
+      console.log("Step 7a-DIAGNOSTIC: Non-streaming failed, trying streaming...");
       // Stream response
-      console.log("Step 7c: Creating streamText instance...");
+      console.log("Step 7b: Creating streamText instance...");
       const result = streamText({
-        model: openrouterClient.languageModel(model),
+        model: openrouter.languageModel(model),
         messages: aiMessages,
         temperature: 0.7,
         onFinish: async (result) => {

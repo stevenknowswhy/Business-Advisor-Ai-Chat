@@ -13,11 +13,11 @@ export const env = createEnv({
       .default("development"),
 
     // OpenRouter Configuration
-    OPENROUTER_API_KEY: z.string().optional(),
+    OPENROUTER_API_KEY: z.string().min(1),
     APP_URL: z.string().url(),
-    OPENROUTER_FREE_MODEL: z.string().default("google/gemini-flash-1.5"),
-    OPENROUTER_BASE_MODEL: z.string().default("openai/gpt-4o-mini"),
-    OPENROUTER_PREMIUM_MODEL: z.string().default("anthropic/claude-3.5-sonnet"),
+    OPENROUTER_FREE_MODEL: z.string().default("deepseek/deepseek-chat"),
+    OPENROUTER_BASE_MODEL: z.string().default("qwen/qwen-2.5-72b-instruct"),
+    OPENROUTER_PREMIUM_MODEL: z.string().default("qwen/qwen-2.5-72b-instruct"),
 
     // Clerk Authentication
     CLERK_SECRET_KEY: z.string().min(1),

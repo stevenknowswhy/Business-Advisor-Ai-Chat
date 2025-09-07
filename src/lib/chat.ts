@@ -108,7 +108,7 @@ export function useAdvisorChat(conversationId?: string) {
         throw new Error('No response body');
       }
 
-      let assistantMessage = {
+      const assistantMessage = {
         id: (Date.now() + 1).toString(),
         role: "assistant" as const,
         content: "",

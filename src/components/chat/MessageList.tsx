@@ -55,8 +55,8 @@ export function MessageList({ messages, advisors, isLoading }: MessageListProps)
         {messages.map((message, index) => {
           // Check if advisor changed from previous message
           const prevMessage = index > 0 ? messages[index - 1] : null;
-          const currentAdvisorId = (message as any).advisor;
-          const prevAdvisorId = prevMessage ? (prevMessage as any).advisor : null;
+          const currentAdvisorId = (message as { advisor?: string }).advisor;
+          const prevAdvisorId = prevMessage ? (prevMessage as { advisor?: string }).advisor : null;
           const advisorChanged = prevMessage &&
                                 message.role === "assistant" &&
                                 prevMessage.role === "assistant" &&

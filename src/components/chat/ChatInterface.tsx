@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
+import Link from "next/link";
 import { AdvisorRail } from "./AdvisorRail";
 import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
@@ -213,18 +214,18 @@ export function ChatInterface() {
           </div>
 
           <div className="space-y-3">
-            <a
+            <Link
               href="/sign-in"
               className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors inline-block"
             >
               Sign In
-            </a>
-            <a
+            </Link>
+            <Link
               href="/sign-up"
               className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors inline-block"
             >
               Create Account
-            </a>
+            </Link>
           </div>
 
           <div className="mt-6 pt-4 border-t border-gray-200">

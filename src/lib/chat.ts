@@ -125,7 +125,7 @@ export function useAdvisorChat(conversationId?: string) {
           throw new Error('AUTH_REQUIRED: Please sign in to use the chat functionality.');
         }
 
-        throw new Error(errorData.message || `Chat API error: ${response.status}`);
+        throw new Error((errorData as any).message || `Chat API error: ${response.status}`);
       }
 
       // Handle JSON response from simplified API
@@ -162,7 +162,7 @@ export function useAdvisorChat(conversationId?: string) {
       if (responseData.conversation?.activeAdvisorId &&
           responseData.conversation.activeAdvisorId !== activeAdvisorId) {
         console.log('Syncing advisor change from API:', responseData.conversation.activeAdvisorId);
-        setActiveAdvisorId(responseData.conversation.activeAdvisorId);
+        setActiveAdvisorId(responseData.conversation.activeAdvisorId as string);
 
         // Update conversation data
         setConversationData(prev => prev ? {

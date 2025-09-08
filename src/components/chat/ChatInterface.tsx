@@ -89,47 +89,101 @@ export function ChatInterface() {
   };
 
   const handleDeleteConversation = async (conversationId: string) => {
+    console.log("handleDeleteConversation called with ID:", conversationId);
+
+    // Prevent multiple simultaneous delete operations
+    if (isLoading) {
+      console.log("Delete operation already in progress, ignoring");
+      return;
+    }
+
     try {
-      console.log("Attempting to delete conversation:", conversationId);
+      console.log("Starting delete conversation process...");
+      setError(null); // Clear any previous errors
+
+      // Show loading state to prevent user from clicking multiple times
+      // Note: We don't have a specific delete loading state, but we can use the general loading
 
       await ConversationsAPI.delete(conversationId);
 
       console.log("Conversation deleted successfully:", conversationId);
 
-      // Remove from local state
-      setConversations(prev => prev.filter(c => c.id !== conversationId));
+      // Remove from local state immediately for responsive UI
+      setConversations(prev => {
+        const updated = prev.filter(c => c.id !== conversationId);
+        console.log("Updated conversations list:", updated.length, "conversations remaining");
+        return updated;
+      });
 
-      // If the deleted conversation was the current one, clear it
+      // If the deleted conversation was the current one, handle gracefully
       if (currentConversation?.id === conversationId) {
+        console.log("Deleted conversation was current, clearing current conversation");
         setCurrentConversation(null);
         setMessages([]);
+
+        // Optionally, switch to another conversation if available
+        const remainingConversations = conversations.filter(c => c.id !== conversationId);
+        if (remainingConversations.length > 0) {
+          console.log("Switching to first remaining conversation");
+          setCurrentConversation(remainingConversations[0]!);
+        }
       }
 
-      // Clear any previous errors
-      setError(null);
+      console.log("Delete conversation process completed successfully");
 
     } catch (error) {
       console.error("Failed to delete conversation:", error);
 
       // Provide specific error messages based on the error type
       let errorMessage = "Failed to delete conversation";
+      let shouldRetry = false;
 
       if (error instanceof Error) {
-        if (error.message.includes("Unable to connect")) {
-          errorMessage = "Unable to connect to server. Please check your connection and try again.";
-        } else if (error.message.includes("sign in")) {
-          errorMessage = "Please sign in to delete conversations.";
-        } else if (error.message.includes("not found")) {
-          errorMessage = "Conversation not found or already deleted.";
+        if (error.message.includes("Unable to connect") ||
+            error.message.includes("network") ||
+            error.message.includes("fetch")) {
+          errorMessage = "Connection error. Please check your internet connection and try again.";
+          shouldRetry = true;
+        } else if (error.message.includes("timed out") ||
+                   error.message.includes("timeout")) {
+          errorMessage = "Request timed out. The conversation may have been deleted. Please refresh the page.";
+          shouldRetry = true;
+        } else if (error.message.includes("sign in") ||
+                   error.message.includes("authentication")) {
+          errorMessage = "Please sign in again to delete conversations.";
+          shouldRetry = false;
+        } else if (error.message.includes("not found") ||
+                   error.message.includes("already deleted")) {
+          errorMessage = "Conversation not found or already deleted. Refreshing the page...";
+          // If conversation not found, remove it from local state anyway
+          setConversations(prev => prev.filter(c => c.id !== conversationId));
+          if (currentConversation?.id === conversationId) {
+            setCurrentConversation(null);
+            setMessages([]);
+          }
+          shouldRetry = false;
         } else if (error.message.includes("permission")) {
           errorMessage = "You don't have permission to delete this conversation.";
+          shouldRetry = false;
+        } else if (error.message.includes("Service temporarily unavailable")) {
+          errorMessage = "Service temporarily unavailable. Please try again in a moment.";
+          shouldRetry = true;
         } else {
           errorMessage = error.message;
+          shouldRetry = error.message.includes("Server error");
         }
       }
 
-      setError(errorMessage);
-      throw error; // Re-throw so the UI can handle it
+      // Set error message with retry information
+      const finalErrorMessage = shouldRetry
+        ? `${errorMessage} You can try again.`
+        : errorMessage;
+
+      setError(finalErrorMessage);
+
+      // Don't re-throw the error to prevent app from breaking
+      // The error is now handled gracefully with user feedback
+      console.log("Error handled gracefully, not re-throwing");
     }
   };
 

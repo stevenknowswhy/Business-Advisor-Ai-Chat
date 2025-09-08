@@ -43,38 +43,74 @@ export class ConversationsAPI {
   }
 
   static async delete(id: string): Promise<void> {
+    console.log("ConversationsAPI.delete called with ID:", id);
+
     try {
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
       const response = await fetch(`/api/conversations/${id}`, {
         method: "DELETE",
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
+
+      clearTimeout(timeoutId);
+      console.log("Delete response status:", response.status);
 
       if (!response.ok) {
         // Try to get error details from response
         let errorMessage = "Failed to delete conversation";
+        let errorDetails = null;
+
         try {
           const errorData = await response.json();
+          console.log("Error response data:", errorData);
           errorMessage = errorData.message || errorData.error || errorMessage;
-        } catch {
+          errorDetails = errorData.details;
+        } catch (parseError) {
+          console.log("Failed to parse error response:", parseError);
           // If response is not JSON, use status text
           errorMessage = response.statusText || errorMessage;
         }
 
         // Provide specific error messages based on status code
-        if (response.status === 404) {
-          throw new Error("Conversation not found or you don't have permission to delete it");
+        if (response.status === 400) {
+          throw new Error("Invalid conversation ID. Please refresh the page and try again.");
         } else if (response.status === 401) {
           throw new Error("Please sign in to delete conversations");
         } else if (response.status === 403) {
           throw new Error("You don't have permission to delete this conversation");
+        } else if (response.status === 404) {
+          throw new Error("Conversation not found or already deleted");
+        } else if (response.status === 408) {
+          throw new Error("Delete operation timed out. The conversation may have been deleted. Please refresh the page.");
+        } else if (response.status === 503) {
+          throw new Error("Service temporarily unavailable. Please try again in a moment.");
         } else if (response.status >= 500) {
-          throw new Error("Server error occurred while deleting conversation. Please try again.");
+          // Include more specific error information for 500 errors
+          const detailedMessage = errorDetails
+            ? `Server error: ${errorMessage}. Details: ${errorDetails}`
+            : `Server error: ${errorMessage}. Please try again or contact support if the issue persists.`;
+          throw new Error(detailedMessage);
         } else {
           throw new Error(errorMessage);
         }
       }
 
+      console.log("Conversation deleted successfully");
       // Success - no need to parse response for DELETE (should be 204 No Content)
     } catch (error) {
+      console.error("ConversationsAPI.delete error:", error);
+
+      // Handle abort/timeout errors
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error("Request timed out. Please check your connection and try again.");
+      }
+
       // Handle network errors (like connection refused)
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error("Unable to connect to server. Please check your connection and try again.");

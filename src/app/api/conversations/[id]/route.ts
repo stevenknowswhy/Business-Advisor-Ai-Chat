@@ -173,7 +173,7 @@ export async function DELETE(
       console.error("Step 5 FAILED: Delete error:", deleteError);
 
       // Check if it's a timeout or actual error
-      if (deleteError.message?.includes('timeout')) {
+      if (deleteError instanceof Error && deleteError.message?.includes('timeout')) {
         return Response.json({
           error: "TIMEOUT_ERROR",
           message: "Delete operation timed out. The conversation may have been deleted. Please refresh the page."

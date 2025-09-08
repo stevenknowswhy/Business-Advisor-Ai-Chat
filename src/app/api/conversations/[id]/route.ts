@@ -80,54 +80,138 @@ export async function GET(
 
 
 
-// Simplified requireUser function that bypasses env validation
-async function simpleRequireUser() {
-  console.log("=== SIMPLE REQUIRE USER START ===");
+// Enhanced requireUser function with comprehensive error handling and logging
+async function debugRequireUser() {
+  const startTime = Date.now();
+  console.log("=== DEBUG REQUIRE USER START ===", {
+    timestamp: new Date().toISOString(),
+    nodeEnv: process.env.NODE_ENV,
+    hasDbUrl: !!process.env.DATABASE_URL,
+    dbUrlPrefix: process.env.DATABASE_URL?.substring(0, 30) + "...",
+  });
 
   try {
-    // Step 1: Get user ID from Clerk
-    console.log("Step 1: Getting user ID from Clerk auth...");
-    const { userId } = await auth();
+    // Step 1: Test Clerk auth function
+    console.log("Step 1: Testing Clerk auth function...");
+    let authResult;
+    try {
+      authResult = await auth();
+      console.log("Step 1 SUCCESS: Auth function executed", {
+        hasUserId: !!authResult.userId,
+        userId: authResult.userId?.substring(0, 10) + "...",
+        sessionId: authResult.sessionId?.substring(0, 10) + "...",
+      });
+    } catch (authError) {
+      console.error("Step 1 FAILED: Auth function error", {
+        error: authError instanceof Error ? authError.message : String(authError),
+        stack: authError instanceof Error ? authError.stack : undefined,
+      });
+      throw new Error(`Authentication failed: ${authError instanceof Error ? authError.message : String(authError)}`);
+    }
 
+    const { userId } = authResult;
     if (!userId) {
       console.log("Step 1 FAILED: No user ID from auth");
-      throw new Error("User not authenticated");
+      throw new Error("User not authenticated - no userId in auth result");
     }
-    console.log("Step 1 SUCCESS: User ID:", userId);
 
-    // Step 2: Get user details from Clerk
-    console.log("Step 2: Getting user details from Clerk...");
-    const clerkUser = await currentUser();
+    // Step 2: Test currentUser function
+    console.log("Step 2: Testing currentUser function...");
+    let clerkUser;
+    try {
+      clerkUser = await currentUser();
+      console.log("Step 2 SUCCESS: CurrentUser function executed", {
+        hasUser: !!clerkUser,
+        userId: clerkUser?.id?.substring(0, 10) + "...",
+        hasEmail: !!clerkUser?.emailAddresses?.[0]?.emailAddress,
+        emailDomain: clerkUser?.emailAddresses?.[0]?.emailAddress?.split('@')[1],
+      });
+    } catch (currentUserError) {
+      console.error("Step 2 FAILED: CurrentUser function error", {
+        error: currentUserError instanceof Error ? currentUserError.message : String(currentUserError),
+        stack: currentUserError instanceof Error ? currentUserError.stack : undefined,
+      });
+      throw new Error(`Current user fetch failed: ${currentUserError instanceof Error ? currentUserError.message : String(currentUserError)}`);
+    }
 
     if (!clerkUser) {
       console.log("Step 2 FAILED: No user details from currentUser");
-      throw new Error("User details not found");
+      throw new Error("User details not found from Clerk");
     }
-    console.log("Step 2 SUCCESS: User details retrieved");
 
-    // Step 3: Sync with database using direct client
-    console.log("Step 3: Syncing user with database...");
-    const user = await directDb.user.upsert({
-      where: { id: userId },
-      update: {
-        email: clerkUser.emailAddresses[0]?.emailAddress || null,
-        name: clerkUser.fullName || null,
-        image: clerkUser.imageUrl || null,
-      },
-      create: {
+    // Step 3: Test database connection
+    console.log("Step 3: Testing database connection...");
+    try {
+      const connectionTest = await directDb.$queryRaw`SELECT 1 as test, NOW() as timestamp`;
+      console.log("Step 3 SUCCESS: Database connection test passed", {
+        result: connectionTest,
+        connectionTime: Date.now() - startTime,
+      });
+    } catch (dbConnectionError) {
+      console.error("Step 3 FAILED: Database connection error", {
+        error: dbConnectionError instanceof Error ? dbConnectionError.message : String(dbConnectionError),
+        code: (dbConnectionError as any)?.code,
+        stack: dbConnectionError instanceof Error ? dbConnectionError.stack : undefined,
+      });
+      throw new Error(`Database connection failed: ${dbConnectionError instanceof Error ? dbConnectionError.message : String(dbConnectionError)}`);
+    }
+
+    // Step 4: Test user upsert operation
+    console.log("Step 4: Testing user upsert operation...");
+    let user;
+    try {
+      const userData = {
         id: userId,
         email: clerkUser.emailAddresses[0]?.emailAddress || null,
         name: clerkUser.fullName || null,
         image: clerkUser.imageUrl || null,
-        plan: "free",
-      },
-    });
-    console.log("Step 3 SUCCESS: User synced with database");
+        plan: "free" as const,
+      };
 
-    console.log("=== SIMPLE REQUIRE USER SUCCESS ===");
+      console.log("Step 4: Attempting upsert with data", {
+        userId: userData.id.substring(0, 10) + "...",
+        hasEmail: !!userData.email,
+        hasName: !!userData.name,
+        hasImage: !!userData.image,
+      });
+
+      user = await directDb.user.upsert({
+        where: { id: userId },
+        update: {
+          email: userData.email,
+          name: userData.name,
+          image: userData.image,
+        },
+        create: userData,
+      });
+
+      console.log("Step 4 SUCCESS: User upsert completed", {
+        userId: user.id.substring(0, 10) + "...",
+        email: user.email,
+        upsertTime: Date.now() - startTime,
+      });
+    } catch (upsertError) {
+      console.error("Step 4 FAILED: User upsert error", {
+        error: upsertError instanceof Error ? upsertError.message : String(upsertError),
+        code: (upsertError as any)?.code,
+        meta: (upsertError as any)?.meta,
+        stack: upsertError instanceof Error ? upsertError.stack : undefined,
+      });
+      throw new Error(`User sync failed: ${upsertError instanceof Error ? upsertError.message : String(upsertError)}`);
+    }
+
+    console.log("=== DEBUG REQUIRE USER SUCCESS ===", {
+      totalTime: Date.now() - startTime,
+      userId: user.id.substring(0, 10) + "...",
+    });
     return user;
+
   } catch (error) {
-    console.error("=== SIMPLE REQUIRE USER ERROR ===", error);
+    console.error("=== DEBUG REQUIRE USER FINAL ERROR ===", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      totalTime: Date.now() - startTime,
+    });
     throw error;
   }
 }
@@ -159,10 +243,10 @@ export async function DELETE(
       }, { status: 400 });
     }
 
-    // Step 2: Authenticate user using simplified function
-    console.log("Step 2: Authenticating user...");
-    const user = await simpleRequireUser();
-    console.log("Step 2 SUCCESS: User authenticated:", user.id);
+    // Step 2: Authenticate user using enhanced debugging function
+    console.log("Step 2: Authenticating user with enhanced debugging...");
+    const user = await debugRequireUser();
+    console.log("Step 2 SUCCESS: User authenticated:", user.id.substring(0, 10) + "...");
 
     // Step 3: Test database connection
     console.log("Step 3: Testing database connection...");
@@ -199,33 +283,81 @@ export async function DELETE(
 
   } catch (error: any) {
     console.error("=== DELETE CONVERSATION API ERROR ===");
+    console.error("Error timestamp:", new Date().toISOString());
     console.error("Error type:", typeof error);
+    console.error("Error constructor:", error?.constructor?.name);
     console.error("Error message:", error?.message);
     console.error("Error code:", error?.code);
+    console.error("Error meta:", error?.meta);
     console.error("Error stack:", error?.stack);
+    console.error("Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
 
-    // Handle specific errors
+    // Enhanced error categorization
+    let errorCategory = "UNKNOWN";
+    let statusCode = 500;
+    let userMessage = "An unexpected error occurred while deleting the conversation";
+
+    // Authentication errors
     if (error?.message?.includes('not authenticated') ||
-        error?.message?.includes('User not found')) {
-      return Response.json({
-        error: "AUTH_REQUIRED",
-        message: "Please sign in to delete conversations"
-      }, { status: 401 });
+        error?.message?.includes('User not found') ||
+        error?.message?.includes('Authentication failed') ||
+        error?.message?.includes('Current user fetch failed')) {
+      errorCategory = "AUTH_ERROR";
+      statusCode = 401;
+      userMessage = "Please sign in to delete conversations";
+    }
+    // Database connection errors
+    else if (error?.message?.includes('Database connection failed') ||
+             error?.message?.includes('connect') ||
+             error?.code === 'ECONNREFUSED' ||
+             error?.code === 'ETIMEDOUT') {
+      errorCategory = "DATABASE_CONNECTION_ERROR";
+      statusCode = 503;
+      userMessage = "Database connection failed. Please try again in a moment.";
+    }
+    // User sync errors
+    else if (error?.message?.includes('User sync failed') ||
+             error?.message?.includes('upsert')) {
+      errorCategory = "USER_SYNC_ERROR";
+      statusCode = 500;
+      userMessage = "User synchronization failed. Please try signing in again.";
+    }
+    // Prisma specific errors
+    else if (error?.code === 'P2025') {
+      errorCategory = "CONVERSATION_NOT_FOUND";
+      statusCode = 404;
+      userMessage = "Conversation not found";
+    }
+    else if (error?.code === 'P2002') {
+      errorCategory = "CONSTRAINT_ERROR";
+      statusCode = 409;
+      userMessage = "Database constraint error";
+    }
+    else if (error?.code?.startsWith('P')) {
+      errorCategory = "PRISMA_ERROR";
+      statusCode = 500;
+      userMessage = "Database operation failed. Please try again.";
+    }
+    // Clerk specific errors
+    else if (error?.message?.includes('Clerk') ||
+             error?.message?.includes('clerk')) {
+      errorCategory = "CLERK_ERROR";
+      statusCode = 500;
+      userMessage = "Authentication service error. Please try again.";
     }
 
-    if (error?.code === 'P2025') {
-      return Response.json({
-        error: "CONVERSATION_NOT_FOUND",
-        message: "Conversation not found"
-      }, { status: 404 });
-    }
+    console.error("Error categorized as:", errorCategory, "with status:", statusCode);
 
-    // Generic error
     return Response.json({
-      error: "INTERNAL_ERROR",
-      message: "An unexpected error occurred while deleting the conversation",
-      details: process.env.NODE_ENV === 'development' ? error?.message : undefined
-    }, { status: 500 });
+      error: errorCategory,
+      message: userMessage,
+      details: process.env.NODE_ENV === 'development' ? {
+        originalMessage: error?.message,
+        code: error?.code,
+        meta: error?.meta,
+      } : undefined,
+      timestamp: new Date().toISOString(),
+    }, { status: statusCode });
   }
 }
 

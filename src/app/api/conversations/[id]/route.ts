@@ -97,7 +97,7 @@ export async function DELETE(
       // Add timeout to authentication to prevent hanging
       user = await Promise.race([
         requireUser(),
-        new Promise((_, reject) =>
+        new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Authentication timeout')), 10000)
         )
       ]);
@@ -135,7 +135,7 @@ export async function DELETE(
             userId: user.id,
           },
         }),
-        new Promise((_, reject) =>
+        new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Database query timeout')), 15000)
         )
       ]);
@@ -164,7 +164,7 @@ export async function DELETE(
         db.conversation.delete({
           where: { id: conversationId },
         }),
-        new Promise((_, reject) =>
+        new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Delete operation timeout')), 20000)
         )
       ]);

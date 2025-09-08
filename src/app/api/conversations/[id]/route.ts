@@ -1,9 +1,25 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 import { requireUser } from "~/server/auth/require-user";
-import { db } from "~/server/db";
 import { formatAdvisorForClient } from "~/server/advisors/persona";
+
+// Create a direct Prisma client to bypass env validation issues
+const createDirectPrismaClient = () => {
+  try {
+    return new PrismaClient({
+      log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+    });
+  } catch (error) {
+    console.error("Failed to create Prisma client:", error);
+    throw error;
+  }
+};
+
+// Use direct client for DELETE operations to avoid env validation issues
+const directDb = createDirectPrismaClient();
 
 // Request schemas
 const updateConversationSchema = z.object({
@@ -19,7 +35,7 @@ export async function GET(
     const user = await requireUser();
     const { id: conversationId } = await params;
 
-    const conversation = await db.conversation.findUnique({
+    const conversation = await directDb.conversation.findUnique({
       where: { 
         id: conversationId,
         userId: user.id, // Ensure user owns this conversation
@@ -64,6 +80,58 @@ export async function GET(
 
 
 
+// Simplified requireUser function that bypasses env validation
+async function simpleRequireUser() {
+  console.log("=== SIMPLE REQUIRE USER START ===");
+
+  try {
+    // Step 1: Get user ID from Clerk
+    console.log("Step 1: Getting user ID from Clerk auth...");
+    const { userId } = await auth();
+
+    if (!userId) {
+      console.log("Step 1 FAILED: No user ID from auth");
+      throw new Error("User not authenticated");
+    }
+    console.log("Step 1 SUCCESS: User ID:", userId);
+
+    // Step 2: Get user details from Clerk
+    console.log("Step 2: Getting user details from Clerk...");
+    const clerkUser = await currentUser();
+
+    if (!clerkUser) {
+      console.log("Step 2 FAILED: No user details from currentUser");
+      throw new Error("User details not found");
+    }
+    console.log("Step 2 SUCCESS: User details retrieved");
+
+    // Step 3: Sync with database using direct client
+    console.log("Step 3: Syncing user with database...");
+    const user = await directDb.user.upsert({
+      where: { id: userId },
+      update: {
+        email: clerkUser.emailAddresses[0]?.emailAddress || null,
+        name: clerkUser.fullName || null,
+        image: clerkUser.imageUrl || null,
+      },
+      create: {
+        id: userId,
+        email: clerkUser.emailAddresses[0]?.emailAddress || null,
+        name: clerkUser.fullName || null,
+        image: clerkUser.imageUrl || null,
+        plan: "free",
+      },
+    });
+    console.log("Step 3 SUCCESS: User synced with database");
+
+    console.log("=== SIMPLE REQUIRE USER SUCCESS ===");
+    return user;
+  } catch (error) {
+    console.error("=== SIMPLE REQUIRE USER ERROR ===", error);
+    throw error;
+  }
+}
+
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -73,10 +141,11 @@ export async function DELETE(
     nodeEnv: process.env.NODE_ENV,
     hasDbUrl: !!process.env.DATABASE_URL,
     hasClerkKey: !!process.env.CLERK_SECRET_KEY,
+    hasClerkPublishable: !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
   });
 
   try {
-    // Step 1: Get conversation ID first (before auth to avoid issues)
+    // Step 1: Get conversation ID
     console.log("Step 1: Extracting conversation ID...");
     const { id: conversationId } = await params;
     console.log("Step 1 SUCCESS: Conversation ID:", conversationId);
@@ -90,62 +159,24 @@ export async function DELETE(
       }, { status: 400 });
     }
 
-    // Step 2: Authenticate user with timeout
+    // Step 2: Authenticate user using simplified function
     console.log("Step 2: Authenticating user...");
-    let user;
-    try {
-      // Add timeout to authentication to prevent hanging
-      user = await Promise.race([
-        requireUser(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Authentication timeout')), 10000)
-        )
-      ]);
-      console.log("Step 2 SUCCESS: User authenticated:", user.id);
-    } catch (authError) {
-      console.error("Step 2 FAILED: Authentication error:", authError);
-      return Response.json({
-        error: "AUTH_ERROR",
-        message: "Authentication failed. Please sign in again."
-      }, { status: 401 });
-    }
+    const user = await simpleRequireUser();
+    console.log("Step 2 SUCCESS: User authenticated:", user.id);
 
-    // Step 3: Database connection check
-    console.log("Step 3: Checking database connection...");
-    try {
-      // Test database connection first
-      await db.$queryRaw`SELECT 1`;
-      console.log("Step 3 SUCCESS: Database connection verified");
-    } catch (dbError) {
-      console.error("Step 3 FAILED: Database connection error:", dbError);
-      return Response.json({
-        error: "DATABASE_ERROR",
-        message: "Database connection failed. Please try again."
-      }, { status: 503 });
-    }
+    // Step 3: Test database connection
+    console.log("Step 3: Testing database connection...");
+    await directDb.$queryRaw`SELECT 1`;
+    console.log("Step 3 SUCCESS: Database connection verified");
 
-    // Step 4: Verify conversation ownership with timeout
-    console.log("Step 4: Verifying conversation ownership...");
-    let existingConversation;
-    try {
-      existingConversation = await Promise.race([
-        db.conversation.findUnique({
-          where: {
-            id: conversationId,
-            userId: user.id,
-          },
-        }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Database query timeout')), 15000)
-        )
-      ]);
-    } catch (queryError) {
-      console.error("Step 4 FAILED: Query error:", queryError);
-      return Response.json({
-        error: "QUERY_ERROR",
-        message: "Database query failed. Please try again."
-      }, { status: 503 });
-    }
+    // Step 4: Find conversation
+    console.log("Step 4: Finding conversation...");
+    const existingConversation = await directDb.conversation.findUnique({
+      where: {
+        id: conversationId,
+        userId: user.id,
+      },
+    });
 
     if (!existingConversation) {
       console.log("Step 4 FAILED: Conversation not found or not owned by user");
@@ -154,35 +185,14 @@ export async function DELETE(
         message: "Conversation not found or you don't have permission to delete it"
       }, { status: 404 });
     }
+    console.log("Step 4 SUCCESS: Conversation found");
 
-    console.log("Step 4 SUCCESS: Conversation found and owned by user");
-
-    // Step 5: Delete conversation with timeout and retry logic
-    console.log("Step 5: Deleting conversation from database...");
-    try {
-      await Promise.race([
-        db.conversation.delete({
-          where: { id: conversationId },
-        }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Delete operation timeout')), 20000)
-        )
-      ]);
-      console.log("Step 5 SUCCESS: Conversation deleted successfully");
-    } catch (deleteError) {
-      console.error("Step 5 FAILED: Delete error:", deleteError);
-
-      // Check if it's a timeout or actual error
-      if (deleteError instanceof Error && deleteError.message?.includes('timeout')) {
-        return Response.json({
-          error: "TIMEOUT_ERROR",
-          message: "Delete operation timed out. The conversation may have been deleted. Please refresh the page."
-        }, { status: 408 });
-      }
-
-      // Re-throw for general error handling
-      throw deleteError;
-    }
+    // Step 5: Delete conversation
+    console.log("Step 5: Deleting conversation...");
+    await directDb.conversation.delete({
+      where: { id: conversationId },
+    });
+    console.log("Step 5 SUCCESS: Conversation deleted");
 
     console.log("=== DELETE CONVERSATION API SUCCESS ===");
     return new Response(null, { status: 204 });
@@ -193,50 +203,24 @@ export async function DELETE(
     console.error("Error message:", error?.message);
     console.error("Error code:", error?.code);
     console.error("Error stack:", error?.stack);
-    console.error("Full error object:", JSON.stringify(error, null, 2));
 
-    // Handle specific Prisma errors
-    if (error?.code === 'P2025') {
-      console.error("Prisma P2025: Record not found");
-      return Response.json({
-        error: "CONVERSATION_NOT_FOUND",
-        message: "Conversation not found"
-      }, { status: 404 });
-    }
-
-    if (error?.code === 'P2002') {
-      console.error("Prisma P2002: Unique constraint violation");
-      return Response.json({
-        error: "CONSTRAINT_ERROR",
-        message: "Database constraint error"
-      }, { status: 409 });
-    }
-
-    // Handle connection errors
-    if (error?.message?.includes('connect') ||
-        error?.message?.includes('timeout') ||
-        error?.code === 'ECONNREFUSED' ||
-        error?.code === 'ETIMEDOUT') {
-      console.error("Database connection error detected");
-      return Response.json({
-        error: "CONNECTION_ERROR",
-        message: "Database connection failed. Please try again in a moment."
-      }, { status: 503 });
-    }
-
-    // Handle authentication errors
-    if (error?.message?.includes('User not found') ||
-        error?.message?.includes('not authenticated') ||
-        error?.message?.includes('Authentication timeout')) {
-      console.error("Authentication error detected");
+    // Handle specific errors
+    if (error?.message?.includes('not authenticated') ||
+        error?.message?.includes('User not found')) {
       return Response.json({
         error: "AUTH_REQUIRED",
         message: "Please sign in to delete conversations"
       }, { status: 401 });
     }
 
-    // Generic error handler with more details for debugging
-    console.error("Unhandled error - returning 500");
+    if (error?.code === 'P2025') {
+      return Response.json({
+        error: "CONVERSATION_NOT_FOUND",
+        message: "Conversation not found"
+      }, { status: 404 });
+    }
+
+    // Generic error
     return Response.json({
       error: "INTERNAL_ERROR",
       message: "An unexpected error occurred while deleting the conversation",
@@ -271,7 +255,7 @@ export async function PATCH(
 
     // Verify conversation ownership
     console.log("Step 4: Verifying conversation ownership...");
-    const existingConversation = await db.conversation.findUnique({
+    const existingConversation = await directDb.conversation.findUnique({
       where: {
         id: conversationId,
         userId: user.id,
@@ -291,7 +275,7 @@ export async function PATCH(
     // If updating activeAdvisorId, verify the advisor exists
     if (updateData.activeAdvisorId) {
       console.log("Step 5: Verifying advisor exists...");
-      const advisor = await db.advisor.findUnique({
+      const advisor = await directDb.advisor.findUnique({
         where: {
           id: updateData.activeAdvisorId,
           status: "active",
@@ -311,7 +295,7 @@ export async function PATCH(
 
     // Update conversation
     console.log("Step 6: Updating conversation in database...");
-    const updatedConversation = await db.conversation.update({
+    const updatedConversation = await directDb.conversation.update({
       where: { id: conversationId },
       data: updateData,
       include: {

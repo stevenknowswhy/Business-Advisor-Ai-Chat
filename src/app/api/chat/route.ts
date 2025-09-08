@@ -44,10 +44,11 @@ export async function POST(req: NextRequest) {
     } catch (authError: any) {
       console.error("Step 1 FAILED: Authentication error:", authError.message);
       console.error("Auth error stack:", authError.stack);
-      return new Response("Authentication failed", {
-        status: 401,
-        headers: { "X-Error": "Authentication-Failed" }
-      });
+      return Response.json({
+        error: "AUTH_REQUIRED",
+        message: "Please sign in to use the chat functionality",
+        code: 401
+      }, { status: 401 });
     }
 
     console.log("Step 2: Parsing request body...");
@@ -69,10 +70,11 @@ export async function POST(req: NextRequest) {
     } catch (parseError: any) {
       console.error("Step 2 FAILED: Request parsing error:", parseError.message);
       console.error("Parse error stack:", parseError.stack);
-      return new Response("Invalid request format", {
-        status: 400,
-        headers: { "X-Error": "Request-Parse-Failed" }
-      });
+      return Response.json({
+        error: "INVALID_REQUEST",
+        message: "Invalid request format",
+        details: parseError.message
+      }, { status: 400 });
     }
 
     // Get the latest user message
@@ -80,7 +82,10 @@ export async function POST(req: NextRequest) {
     const latestMessage = userMessages[userMessages.length - 1];
 
     if (!latestMessage) {
-      return new Response("No user message found", { status: 400 });
+      return Response.json({
+        error: "NO_USER_MESSAGE",
+        message: "No user message found in request"
+      }, { status: 400 });
     }
 
     const message = latestMessage.content;
@@ -98,10 +103,11 @@ export async function POST(req: NextRequest) {
     } catch (advisorError: any) {
       console.error("Step 3 FAILED: Advisor processing error:", advisorError.message);
       console.error("Advisor error stack:", advisorError.stack);
-      return new Response("Advisor processing failed", {
-        status: 500,
-        headers: { "X-Error": "Advisor-Processing-Failed" }
-      });
+      return Response.json({
+        error: "ADVISOR_PROCESSING_ERROR",
+        message: "Failed to process advisor information",
+        details: advisorError.message
+      }, { status: 500 });
     }
 
     // Determine active advisor
@@ -122,7 +128,10 @@ export async function POST(req: NextRequest) {
 
     if (!activeAdvisor) {
       console.error("CRITICAL ERROR: No advisor available");
-      return new Response("No advisor available", { status: 400 });
+      return Response.json({
+        error: "NO_ADVISOR_AVAILABLE",
+        message: "No advisor is available to handle this request"
+      }, { status: 400 });
     }
     console.log("Step 3 SUCCESS: Active advisor selected:", activeAdvisor.id);
 
@@ -145,7 +154,11 @@ export async function POST(req: NextRequest) {
 
         if (!conversation) {
           console.error("CRITICAL ERROR: Conversation not found:", conversationId);
-          return new Response("Conversation not found", { status: 404 });
+          return Response.json({
+            error: "CONVERSATION_NOT_FOUND",
+            message: "The specified conversation could not be found",
+            conversationId
+          }, { status: 404 });
         }
         console.log("Step 4a SUCCESS: Found conversation with", conversation.messages.length, "messages");
       } else {
@@ -166,10 +179,11 @@ export async function POST(req: NextRequest) {
     } catch (dbError: any) {
       console.error("Step 4 FAILED: Database operation error:", dbError.message);
       console.error("Database error stack:", dbError.stack);
-      return new Response("Database operation failed", {
-        status: 500,
-        headers: { "X-Error": "Database-Operation-Failed" }
-      });
+      return Response.json({
+        error: "DATABASE_ERROR",
+        message: "Database operation failed",
+        details: dbError.message
+      }, { status: 500 });
     }
 
     console.log("Step 5: Updating conversation and saving user message...");
@@ -233,22 +247,20 @@ export async function POST(req: NextRequest) {
     if (!apiKey) {
       console.error("CRITICAL ERROR: OPENROUTER_API_KEY is missing in production environment");
       console.error("Available env vars:", Object.keys(process.env).filter(k => k.includes('OPENROUTER')));
-      return new Response("Configuration error: Missing OpenRouter API key", {
-        status: 500,
-        headers: {
-          "X-Error": "Missing-API-Key",
-          "X-Conversation-Id": conversation.id,
-          "X-Active-Advisor": activeAdvisor.id,
-        }
-      });
+      return Response.json({
+        error: "MISSING_API_KEY",
+        message: "OpenRouter API key is not configured",
+        conversationId: conversation.id,
+        activeAdvisorId: activeAdvisor.id,
+      }, { status: 500 });
     }
 
     console.log("AI Messages count:", aiMessages.length);
     console.log("AI Messages preview:", JSON.stringify(aiMessages.map(m => ({ role: m.role, contentLength: m.content.length })), null, 2));
 
     try {
-      // CRITICAL FIX: Use direct fetch approach (same as chat-minimal) instead of AI SDK
-      console.log("Step 7a: Testing direct OpenRouter API call (same as chat-minimal)...");
+      // Simplified approach: Direct OpenRouter API call with JSON response
+      console.log("Step 7a: Making direct OpenRouter API call...");
 
       const directResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -266,54 +278,55 @@ export async function POST(req: NextRequest) {
         }),
       });
 
-      console.log("Step 7b: Direct API response status:", directResponse.status);
-      console.log("Step 7c: Direct API response headers:", Object.fromEntries(directResponse.headers.entries()));
-
-      const responseText = await directResponse.text();
-      console.log("Step 7d: Direct API response text (first 500 chars):", responseText.substring(0, 500));
+      console.log("Step 7b: API response status:", directResponse.status);
 
       if (!directResponse.ok) {
-        console.error("Step 7 FAILED: Direct API test failed:", directResponse.status, responseText);
-        return new Response(`Direct API test failed: ${directResponse.status} - ${responseText}`, {
-          status: 500,
-          headers: { "X-Error": "OpenRouter-API-Failed" }
-        });
+        const errorText = await directResponse.text();
+        console.error("Step 7 FAILED: OpenRouter API error:", directResponse.status, errorText);
+        return Response.json({
+          error: "AI_API_ERROR",
+          message: "Failed to generate response from AI service",
+          details: `OpenRouter API returned ${directResponse.status}`,
+          conversationId: conversation.id,
+        }, { status: 500 });
       }
 
       // Parse the JSON response
       let responseData;
       try {
-        responseData = JSON.parse(responseText);
-        console.log("Step 7e: Response parsed successfully");
+        responseData = await directResponse.json();
+        console.log("Step 7c: Response parsed successfully");
         console.log("- Choices count:", responseData.choices?.length);
         console.log("- Usage:", responseData.usage);
       } catch (parseError: any) {
         console.error("Step 7 FAILED: JSON parse error:", parseError.message);
-        return new Response(`JSON parse error: ${parseError.message}`, {
-          status: 500,
-          headers: { "X-Error": "JSON-Parse-Failed" }
-        });
+        return Response.json({
+          error: "RESPONSE_PARSE_ERROR",
+          message: "Failed to parse AI response",
+          conversationId: conversation.id,
+        }, { status: 500 });
       }
 
       // Extract the response content
       const assistantMessage = responseData.choices?.[0]?.message?.content;
       if (!assistantMessage) {
         console.error("Step 7 FAILED: No assistant message in response");
-        return new Response("No assistant message in response", {
-          status: 500,
-          headers: { "X-Error": "No-Assistant-Message" }
-        });
+        return Response.json({
+          error: "NO_AI_RESPONSE",
+          message: "AI service did not provide a response",
+          conversationId: conversation.id,
+        }, { status: 500 });
       }
 
       console.log("Step 7 SUCCESS: AI response generated!");
       console.log("- Response length:", assistantMessage.length);
       console.log("- Tokens used:", responseData.usage?.total_tokens);
-      console.log("- Response preview:", assistantMessage.substring(0, 200) + "...");
 
       // Save the AI response to database
-      console.log("Step 7f: Saving AI response to database...");
+      console.log("Step 7d: Saving AI response to database...");
+      let savedMessage;
       try {
-        await db.message.create({
+        savedMessage = await db.message.create({
           data: {
             conversationId: conversation.id,
             sender: "advisor",
@@ -327,20 +340,36 @@ export async function POST(req: NextRequest) {
             },
           },
         });
-        console.log("Step 7f SUCCESS: AI response saved to database");
+        console.log("Step 7d SUCCESS: AI response saved to database");
       } catch (dbError: any) {
-        console.error("Step 7f WARNING: Database save error:", dbError.message);
-        // Don't fail the request if database save fails
+        console.error("Step 7d ERROR: Database save error:", dbError.message);
+        return Response.json({
+          error: "DATABASE_SAVE_ERROR",
+          message: "Failed to save AI response to database",
+          conversationId: conversation.id,
+        }, { status: 500 });
       }
 
-      // Return the response as plain text for testing
-      return new Response(assistantMessage as string, {
+      // Return structured JSON response
+      return Response.json({
+        success: true,
+        message: {
+          id: savedMessage.id,
+          content: assistantMessage,
+          sender: "advisor",
+          advisorId: activeAdvisor.id,
+          createdAt: savedMessage.createdAt,
+          tokensUsed: responseData.usage?.total_tokens,
+        },
+        conversation: {
+          id: conversation.id,
+          activeAdvisorId: activeAdvisor.id,
+        },
+        usage: responseData.usage,
+      }, {
         status: 200,
         headers: {
-          "Content-Type": "text/plain",
-          "X-Conversation-Id": conversation.id,
-          "X-Active-Advisor": activeAdvisor.id,
-          "X-Tokens-Used": responseData.usage?.total_tokens?.toString() || "0",
+          "Content-Type": "application/json",
         },
       });
 
@@ -365,12 +394,32 @@ export async function POST(req: NextRequest) {
 
     if (error instanceof z.ZodError) {
       console.error("Zod validation error details:", error.errors);
-      // Echo back the first error path for easier client debugging in test page
       const first = error.errors?.[0];
       const detail = first ? `${first.message} at ${first.path?.join('.')}` : 'Invalid request data';
-      return new Response(`Invalid request data: ${detail}` , { status: 400 });
+      return Response.json({
+        error: "VALIDATION_ERROR",
+        message: "Invalid request data",
+        details: detail,
+        validationErrors: error.errors
+      }, { status: 400 });
     }
 
-    return new Response("Internal server error", { status: 500 });
+    // Check for authentication errors
+    if (error?.message?.includes('User not authenticated') ||
+        error?.message?.includes('Unauthorized') ||
+        error?.message?.includes('not found')) {
+      console.error("Authentication error detected");
+      return Response.json({
+        error: "AUTH_REQUIRED",
+        message: "Please sign in to use the chat functionality",
+        code: 401
+      }, { status: 401 });
+    }
+
+    return Response.json({
+      error: "INTERNAL_ERROR",
+      message: "An unexpected error occurred. Please try again.",
+      code: 500
+    }, { status: 500 });
   }
 }

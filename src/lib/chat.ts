@@ -108,71 +108,94 @@ export function useAdvisorChat(conversationId?: string) {
       console.log('Chat API response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Chat API error response:', errorText);
-        throw new Error(`Chat API error: ${response.status} - ${errorText}`);
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('Chat API error response:', errorData);
+        } catch (parseError) {
+          const errorText = await response.text();
+          console.error('Chat API error response (text):', errorText);
+          throw new Error(`Chat API error: ${response.status} - ${errorText}`);
+        }
+
+        // Handle structured error responses
+        if (errorData.error === 'AUTH_REQUIRED') {
+          throw new Error('AUTH_REQUIRED: Please sign in to use the chat functionality.');
+        }
+
+        throw new Error(errorData.message || `Chat API error: ${response.status}`);
       }
 
-      // Check if response has a body
-      if (!response.body) {
-        console.error('No response body received from chat API');
-        throw new Error('No response body received from chat API');
+      // Handle JSON response from simplified API
+      console.log('Processing JSON response from chat API...');
+      let responseData;
+      try {
+        responseData = await response.json();
+        console.log('Chat API response data:', responseData);
+      } catch (parseError) {
+        console.error('Failed to parse JSON response:', parseError);
+        throw new Error('Invalid response format from chat API');
       }
 
-      // Handle streaming response from AI SDK
-      console.log('Starting to read streaming response...');
-      console.log('Response content-type:', response.headers.get('content-type'));
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('No response body reader available');
+      // Validate response structure
+      if (!responseData.success || !responseData.message) {
+        console.error('Invalid response structure:', responseData);
+        throw new Error('Invalid response structure from chat API');
       }
 
+      // Add the assistant message to state
       const assistantMessage = {
-        id: (Date.now() + 1).toString(),
+        id: responseData.message.id,
         role: "assistant" as const,
-        content: "",
+        content: responseData.message.content,
+        advisor: responseData.message.advisorId,
+        createdAt: responseData.message.createdAt,
+        tokensUsed: responseData.message.tokensUsed,
       };
 
       console.log('Adding assistant message to state:', assistantMessage);
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Read the stream - AI SDK returns plain text chunks, not JSON
-      const decoder = new TextDecoder();
-      let chunkCount = 0;
-      let accumulatedContent = "";
+      // Sync advisor changes from API response (e.g., from @mentions)
+      if (responseData.conversation?.activeAdvisorId &&
+          responseData.conversation.activeAdvisorId !== activeAdvisorId) {
+        console.log('Syncing advisor change from API:', responseData.conversation.activeAdvisorId);
+        setActiveAdvisorId(responseData.conversation.activeAdvisorId);
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          console.log('Stream reading completed. Total chunks:', chunkCount);
-          console.log('Final accumulated content:', accumulatedContent);
-          break;
-        }
-
-        chunkCount++;
-        // Decode the chunk and add to buffer
-        const chunk = decoder.decode(value, { stream: true });
-        console.log(`Chunk ${chunkCount}:`, JSON.stringify(chunk));
-
-        // Accumulate content without mutating the original object
-        accumulatedContent += chunk;
-
-        console.log('Accumulated content so far:', accumulatedContent);
-
-        // Update the message in state with new content
-        setMessages(prev =>
-          prev.map(msg =>
-            msg.id === assistantMessage.id
-              ? { ...msg, content: accumulatedContent }
-              : msg
-          )
-        );
+        // Update conversation data
+        setConversationData(prev => prev ? {
+          ...prev,
+          activeAdvisorId: responseData.conversation.activeAdvisorId,
+        } : null);
       }
+
+      console.log('Chat API call completed successfully');
+      console.log('- Message ID:', assistantMessage.id);
+      console.log('- Content length:', assistantMessage.content.length);
+      console.log('- Tokens used:', assistantMessage.tokensUsed);
+      console.log('- Active advisor:', responseData.conversation?.activeAdvisorId);
     } catch (err) {
       console.error('Chat error:', err);
-      setError(err instanceof Error ? err : new Error('Chat error'));
+
+      // Remove the user message that was optimistically added if there was an error
+      setMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
+
+      // Handle different types of errors
+      if (err instanceof Error) {
+        if (err.message.includes('AUTH_REQUIRED')) {
+          setError(new Error('Please sign in to use the chat functionality.'));
+        } else if (err.message.includes('401')) {
+          setError(new Error('Authentication required. Please sign in to continue.'));
+        } else if (err.message.includes('CONVERSATION_NOT_FOUND')) {
+          setError(new Error('Conversation not found. Please start a new conversation.'));
+        } else if (err.message.includes('NO_ADVISOR_AVAILABLE')) {
+          setError(new Error('No advisor is available. Please try again later.'));
+        } else {
+          setError(new Error(err.message || 'An error occurred while sending your message.'));
+        }
+      } else {
+        setError(new Error('An unexpected error occurred. Please try again.'));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -184,53 +207,48 @@ export function useAdvisorChat(conversationId?: string) {
     originalHandleSubmit(e);
   }, [originalHandleSubmit, input]);
 
-  const switchAdvisor = useCallback((advisorId: string) => {
+  const switchAdvisor = useCallback(async (advisorId: string) => {
+    console.log("Switching advisor to:", advisorId);
+
+    // Update local state immediately for responsive UI
     setActiveAdvisorId(advisorId);
-  }, []);
 
-  const extractMentions = useCallback((text: string, availableAdvisors: Advisor[]): string[] => {
-    const mentions: string[] = [];
-    const advisorNames = availableAdvisors.map(advisor => ({
-      id: advisor.id,
-      name: advisor.name.toLowerCase(),
-      firstName: advisor.name.split(' ')[0]?.toLowerCase(),
-    }));
+    // If we have a conversation, persist the advisor switch to the database
+    if (conversationData?.id) {
+      try {
+        console.log("Persisting advisor switch to database for conversation:", conversationData.id);
 
-    // Look for @mentions in the content - try both single word and two word patterns
-    const singleWordRegex = /@(\w+)\b/gi;
-    const twoWordRegex = /@(\w+\s+\w+)\b/gi;
+        const response = await fetch(`/api/conversations/${conversationData.id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            activeAdvisorId: advisorId,
+          }),
+        });
 
-    // First try two-word matches (full names)
-    let match;
-    while ((match = twoWordRegex.exec(text)) !== null) {
-      const mentionText = match[1]?.toLowerCase();
+        if (!response.ok) {
+          console.error("Failed to persist advisor switch:", response.status);
+          // Don't throw error - local state is already updated for better UX
+        } else {
+          console.log("Advisor switch persisted successfully");
 
-      const matchedAdvisor = advisorNames.find(advisor =>
-        advisor.name === mentionText
-      );
-
-      if (matchedAdvisor && !mentions.includes(matchedAdvisor.id)) {
-        mentions.push(matchedAdvisor.id);
-      }
-    }
-
-    // If no two-word matches, try single word matches (first names)
-    if (mentions.length === 0) {
-      while ((match = singleWordRegex.exec(text)) !== null) {
-        const mentionText = match[1]?.toLowerCase();
-
-        const matchedAdvisor = advisorNames.find(advisor =>
-          advisor.firstName === mentionText
-        );
-
-        if (matchedAdvisor && !mentions.includes(matchedAdvisor.id)) {
-          mentions.push(matchedAdvisor.id);
+          // Update conversation data with new active advisor
+          setConversationData(prev => prev ? {
+            ...prev,
+            activeAdvisorId: advisorId,
+          } : null);
         }
+      } catch (error) {
+        console.error("Error persisting advisor switch:", error);
+        // Don't throw error - local state is already updated for better UX
       }
     }
+  }, [conversationData?.id, setConversationData]);
 
-    return mentions;
-  }, []);
+  // Mention extraction is now handled server-side only
+  // This removes the duplicate frontend logic that was causing conflicts
 
   return {
     messages,
@@ -242,7 +260,6 @@ export function useAdvisorChat(conversationId?: string) {
     setMessages,
     activeAdvisorId,
     switchAdvisor,
-    extractMentions,
     conversationData,
     setConversationData,
   };

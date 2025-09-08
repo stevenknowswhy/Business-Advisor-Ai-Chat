@@ -5,13 +5,19 @@ const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/test-chat(.*)",
+  "/test-auth(.*)",
+  "/clerk-test(.*)",
   "/api/webhooks(.*)",
-  "/api/chat(.*)",
-  "/api/chat-minimal(.*)",
-  "/api/advisors(.*)",
-  "/api/conversations(.*)",
+  // Removed: "/api/chat(.*)" - now requires authentication
+  // Removed: "/api/chat-minimal(.*)" - now requires authentication
+  // Removed: "/api/advisors(.*)" - now requires authentication
+  // Removed: "/api/conversations(.*)" - now requires authentication
   "/api/test-simple(.*)",
   "/api/debug-env(.*)",
+  "/api/debug-auth(.*)",
+  "/api/auth-debug(.*)",
+  "/api/test-auth-flow(.*)",
+  "/api/clerk-diagnostic(.*)",
   "/api/csp-report(.*)",
 ]);
 

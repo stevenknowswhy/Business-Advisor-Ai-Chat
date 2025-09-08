@@ -43,11 +43,45 @@ export class ConversationsAPI {
   }
 
   static async delete(id: string): Promise<void> {
-    const response = await fetch(`/api/conversations/${id}`, {
-      method: "DELETE",
-    });
-    if (!response.ok) {
-      throw new Error("Failed to delete conversation");
+    try {
+      const response = await fetch(`/api/conversations/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        // Try to get error details from response
+        let errorMessage = "Failed to delete conversation";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+
+        // Provide specific error messages based on status code
+        if (response.status === 404) {
+          throw new Error("Conversation not found or you don't have permission to delete it");
+        } else if (response.status === 401) {
+          throw new Error("Please sign in to delete conversations");
+        } else if (response.status === 403) {
+          throw new Error("You don't have permission to delete this conversation");
+        } else if (response.status >= 500) {
+          throw new Error("Server error occurred while deleting conversation. Please try again.");
+        } else {
+          throw new Error(errorMessage);
+        }
+      }
+
+      // Success - no need to parse response for DELETE (should be 204 No Content)
+    } catch (error) {
+      // Handle network errors (like connection refused)
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error("Unable to connect to server. Please check your connection and try again.");
+      }
+
+      // Re-throw other errors
+      throw error;
     }
   }
 }

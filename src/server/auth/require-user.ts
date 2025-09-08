@@ -1,22 +1,30 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
+import { validateAuthEnvironment } from "./validate-env";
 
 /**
  * Get the current authenticated user from Clerk and sync with database
  * Throws an error if user is not authenticated
  */
 export async function requireUser() {
+  // Validate environment configuration first
+  const envValidation = validateAuthEnvironment();
+  if (!envValidation.isValid) {
+    console.error("Authentication environment validation failed:", envValidation.errors);
+    throw new Error("Authentication configuration error: " + envValidation.errors.join(", "));
+  }
+
   const { userId } = await auth();
 
   if (!userId) {
-    throw new Error("Unauthorized: User not authenticated");
+    throw new Error("User not found.");
   }
 
   // Get user details from Clerk
   const clerkUser = await currentUser();
 
   if (!clerkUser) {
-    throw new Error("Unauthorized: Invalid user session");
+    throw new Error("User not found.");
   }
 
   // Sync user with database

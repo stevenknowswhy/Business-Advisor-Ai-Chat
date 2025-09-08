@@ -8,9 +8,10 @@ import { AuthHeader } from "~/components/auth/AuthHeader";
 interface ConversationHeaderProps {
   conversation: Conversation | null;
   activeAdvisor?: Advisor;
+  advisorSwitched?: boolean; // New prop to indicate recent advisor switch
 }
 
-export function ConversationHeader({ conversation, activeAdvisor }: ConversationHeaderProps) {
+export function ConversationHeader({ conversation, activeAdvisor, advisorSwitched }: ConversationHeaderProps) {
   const [showAdvisorInfo, setShowAdvisorInfo] = useState(false);
 
   if (!conversation) {
@@ -27,8 +28,15 @@ export function ConversationHeader({ conversation, activeAdvisor }: Conversation
         {/* Left side - Conversation info */}
         <div className="flex items-center space-x-4">
           {activeAdvisor && (
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium ${getAdvisorColor(activeAdvisor.id)}`}>
-              {getAdvisorInitials(activeAdvisor.name)}
+            <div className="relative">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium ${getAdvisorColor(activeAdvisor.id)} ${advisorSwitched ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}>
+                {getAdvisorInitials(activeAdvisor.name)}
+              </div>
+              {advisorSwitched && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                </div>
+              )}
             </div>
           )}
           <div>
@@ -38,6 +46,11 @@ export function ConversationHeader({ conversation, activeAdvisor }: Conversation
             {activeAdvisor && (
               <p className="text-sm text-gray-600">
                 Currently chatting with <span className="font-medium">{activeAdvisor.name}</span>
+                {advisorSwitched && (
+                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Switched
+                  </span>
+                )}
               </p>
             )}
           </div>

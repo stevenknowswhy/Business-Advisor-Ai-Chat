@@ -125,7 +125,10 @@ export function useAdvisorChat(conversationId?: string) {
           throw new Error('AUTH_REQUIRED: Please sign in to use the chat functionality.');
         }
 
-        throw new Error((errorData as any).message || `Chat API error: ${response.status}`);
+        const errorMessage = errorData && typeof errorData === 'object' && 'message' in errorData
+          ? (errorData as { message: string }).message
+          : `Chat API error: ${response.status}`;
+        throw new Error(errorMessage);
       }
 
       // Handle JSON response from simplified API

@@ -92,7 +92,7 @@ export function ChatInterface() {
     console.log("handleDeleteConversation called with ID:", conversationId);
 
     // Prevent multiple simultaneous delete operations
-    if (isLoading) {
+    if (loading) {
       console.log("Delete operation already in progress, ignoring");
       return;
     }

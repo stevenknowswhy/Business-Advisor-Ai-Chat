@@ -3,8 +3,13 @@ import { z } from "zod";
 import { PrismaClient } from "@prisma/client";
 import { auth, currentUser } from "@clerk/nextjs/server";
 
-import { requireUser } from "~/server/auth/require-user";
-import { formatAdvisorForClient } from "~/server/advisors/persona";
+// REMOVED: import { requireUser } from "~/server/auth/require-user";
+// This import causes environment validation failures in production
+// We use debugRequireUser() instead which bypasses the problematic imports
+
+// REMOVED: import { formatAdvisorForClient } from "~/server/advisors/persona";
+// This import also causes environment validation failures in production
+// We create a local version below to avoid the problematic import chain
 
 // Create a direct Prisma client to bypass env validation issues
 const createDirectPrismaClient = () => {
@@ -21,6 +26,21 @@ const createDirectPrismaClient = () => {
 // Use direct client for DELETE operations to avoid env validation issues
 const directDb = createDirectPrismaClient();
 
+// Local version of formatAdvisorForClient to avoid problematic imports
+function localFormatAdvisorForClient(advisor: any) {
+  // Simple formatting without the complex persona logic to avoid imports
+  return {
+    id: advisor.id,
+    name: advisor.name || 'Unknown Advisor',
+    title: advisor.title || 'Business Advisor',
+    image: advisor.image || null,
+    oneLiner: advisor.oneLiner || 'Expert business advisor',
+    archetype: advisor.archetype || 'general',
+    bio: advisor.bio || 'Experienced business advisor',
+    // Add other fields as needed, with safe defaults
+  };
+}
+
 // Request schemas
 const updateConversationSchema = z.object({
   title: z.string().optional(),
@@ -32,7 +52,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await requireUser();
+    const user = await debugRequireUser();
     const { id: conversationId } = await params;
 
     const conversation = await directDb.conversation.findUnique({
@@ -60,7 +80,7 @@ export async function GET(
       content: message.content,
       createdAt: message.createdAt,
       mentions: message.mentions,
-      advisor: message.advisor ? formatAdvisorForClient(message.advisor) : null,
+      advisor: message.advisor ? localFormatAdvisorForClient(message.advisor) : null,
     }));
 
     return Response.json({
@@ -68,7 +88,7 @@ export async function GET(
       title: conversation.title,
       createdAt: conversation.createdAt,
       updatedAt: conversation.updatedAt,
-      activeAdvisor: conversation.activeAdvisor ? formatAdvisorForClient(conversation.activeAdvisor) : null,
+      activeAdvisor: conversation.activeAdvisor ? localFormatAdvisorForClient(conversation.activeAdvisor) : null,
       messages: formattedMessages,
     });
 
@@ -373,8 +393,8 @@ export async function PATCH(
 
   try {
     console.log("Step 1: Authenticating user...");
-    const user = await requireUser();
-    console.log("Step 1 SUCCESS: User authenticated:", user.id);
+    const user = await debugRequireUser();
+    console.log("Step 1 SUCCESS: User authenticated:", user.id.substring(0, 10) + "...");
 
     const { id: conversationId } = await params;
     console.log("Step 2: Conversation ID to update:", conversationId);

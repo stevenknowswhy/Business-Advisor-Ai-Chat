@@ -73,17 +73,19 @@ export function useAdvisorChat(conversationId?: string) {
     if (!input.trim()) return;
 
     setIsLoading(true);
-    try {
-      // Add user message to the messages array
-      const userMessage = {
-        id: Date.now().toString(),
-        role: "user" as const,
-        content: input,
-      };
 
-      const newMessages = [...messages, userMessage];
-      setMessages(newMessages);
-      setInput("");
+    // Add user message to the messages array
+    const userMessage = {
+      id: Date.now().toString(),
+      role: "user" as const,
+      content: input,
+    };
+
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    setInput("");
+
+    try {
 
       // Call the chat API
       console.log('Calling chat API with:', {

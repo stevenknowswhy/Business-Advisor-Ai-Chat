@@ -32,11 +32,6 @@ export async function POST(req: NextRequest) {
     console.log("Step 3: Fetching available advisors...");
     const advisors = await db.advisor.findMany({
       where: { status: "active" },
-      select: {
-        id: true,
-        persona: true,
-        metadata: true,
-      },
     });
     console.log("Step 3 SUCCESS: Found", advisors.length, "active advisors");
 

@@ -52,13 +52,33 @@ export function MessageList({ messages, advisors, isLoading }: MessageListProps)
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-4xl mx-auto p-4 space-y-6">
-        {messages.map((message, index) => (
-          <MessageBubble
-            key={message.id || index}
-            message={message}
-            advisors={advisors}
-          />
-        ))}
+        {messages.map((message, index) => {
+          // Check if advisor changed from previous message
+          const prevMessage = index > 0 ? messages[index - 1] : null;
+          const currentAdvisorId = (message as any).advisor;
+          const prevAdvisorId = prevMessage ? (prevMessage as any).advisor : null;
+          const advisorChanged = prevMessage &&
+                                message.role === "assistant" &&
+                                prevMessage.role === "assistant" &&
+                                currentAdvisorId !== prevAdvisorId;
+
+          return (
+            <div key={message.id || index}>
+              {/* Show advisor transition indicator */}
+              {advisorChanged && (
+                <AdvisorTransition
+                  fromAdvisor={advisors.find(a => a.id === prevAdvisorId)}
+                  toAdvisor={advisors.find(a => a.id === currentAdvisorId)}
+                />
+              )}
+
+              <MessageBubble
+                message={message}
+                advisors={advisors}
+              />
+            </div>
+          );
+        })}
         
         {isLoading && <TypingIndicator />}
         
@@ -70,7 +90,8 @@ export function MessageList({ messages, advisors, isLoading }: MessageListProps)
 
 function MessageBubble({ message, advisors }: { message: Message; advisors: Advisor[] }) {
   const isUser = message.role === "user";
-  const advisor = advisors.find(a => a.id === message.id) || advisors[0];
+  // Fix: Find advisor by message.advisor (advisorId) instead of message.id
+  const advisor = advisors.find(a => a.id === (message as any).advisor) || advisors[0];
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
@@ -161,5 +182,39 @@ function MessageContent({ content }: { content: string }) {
         __html: formatContent(content).replace(/\n/g, '<br />'),
       }}
     />
+  );
+}
+
+function AdvisorTransition({ fromAdvisor, toAdvisor }: {
+  fromAdvisor?: Advisor;
+  toAdvisor?: Advisor;
+}) {
+  if (!fromAdvisor || !toAdvisor) return null;
+
+  return (
+    <div className="flex items-center justify-center my-4">
+      <div className="flex items-center space-x-3 bg-blue-50 border border-blue-200 rounded-full px-4 py-2 text-sm">
+        <div className="flex items-center space-x-2">
+          {/* From advisor */}
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium ${getAdvisorColor(fromAdvisor.id)}`}>
+            {getAdvisorInitials(fromAdvisor.name)}
+          </div>
+          <span className="text-gray-600">{fromAdvisor.name}</span>
+        </div>
+
+        {/* Arrow */}
+        <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+
+        <div className="flex items-center space-x-2">
+          {/* To advisor */}
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium ${getAdvisorColor(toAdvisor.id)}`}>
+            {getAdvisorInitials(toAdvisor.name)}
+          </div>
+          <span className="text-gray-900 font-medium">{toAdvisor.name}</span>
+        </div>
+      </div>
+    </div>
   );
 }

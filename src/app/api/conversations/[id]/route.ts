@@ -69,51 +69,165 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   console.log("=== DELETE CONVERSATION API START ===");
+  console.log("Environment check:", {
+    nodeEnv: process.env.NODE_ENV,
+    hasDbUrl: !!process.env.DATABASE_URL,
+    hasClerkKey: !!process.env.CLERK_SECRET_KEY,
+  });
 
   try {
-    console.log("Step 1: Authenticating user...");
-    const user = await requireUser();
-    console.log("Step 1 SUCCESS: User authenticated:", user.id);
-
+    // Step 1: Get conversation ID first (before auth to avoid issues)
+    console.log("Step 1: Extracting conversation ID...");
     const { id: conversationId } = await params;
-    console.log("Step 2: Conversation ID to delete:", conversationId);
+    console.log("Step 1 SUCCESS: Conversation ID:", conversationId);
 
-    // Verify conversation ownership
-    console.log("Step 3: Verifying conversation ownership...");
-    const existingConversation = await db.conversation.findUnique({
-      where: {
-        id: conversationId,
-        userId: user.id,
-      },
-    });
+    // Validate conversation ID format
+    if (!conversationId || typeof conversationId !== 'string' || conversationId.length < 10) {
+      console.log("Step 1 FAILED: Invalid conversation ID format");
+      return Response.json({
+        error: "INVALID_ID",
+        message: "Invalid conversation ID format"
+      }, { status: 400 });
+    }
+
+    // Step 2: Authenticate user with timeout
+    console.log("Step 2: Authenticating user...");
+    let user;
+    try {
+      // Add timeout to authentication to prevent hanging
+      user = await Promise.race([
+        requireUser(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Authentication timeout')), 10000)
+        )
+      ]);
+      console.log("Step 2 SUCCESS: User authenticated:", user.id);
+    } catch (authError) {
+      console.error("Step 2 FAILED: Authentication error:", authError);
+      return Response.json({
+        error: "AUTH_ERROR",
+        message: "Authentication failed. Please sign in again."
+      }, { status: 401 });
+    }
+
+    // Step 3: Database connection check
+    console.log("Step 3: Checking database connection...");
+    try {
+      // Test database connection first
+      await db.$queryRaw`SELECT 1`;
+      console.log("Step 3 SUCCESS: Database connection verified");
+    } catch (dbError) {
+      console.error("Step 3 FAILED: Database connection error:", dbError);
+      return Response.json({
+        error: "DATABASE_ERROR",
+        message: "Database connection failed. Please try again."
+      }, { status: 503 });
+    }
+
+    // Step 4: Verify conversation ownership with timeout
+    console.log("Step 4: Verifying conversation ownership...");
+    let existingConversation;
+    try {
+      existingConversation = await Promise.race([
+        db.conversation.findUnique({
+          where: {
+            id: conversationId,
+            userId: user.id,
+          },
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Database query timeout')), 15000)
+        )
+      ]);
+    } catch (queryError) {
+      console.error("Step 4 FAILED: Query error:", queryError);
+      return Response.json({
+        error: "QUERY_ERROR",
+        message: "Database query failed. Please try again."
+      }, { status: 503 });
+    }
 
     if (!existingConversation) {
-      console.log("Step 3 FAILED: Conversation not found or not owned by user");
+      console.log("Step 4 FAILED: Conversation not found or not owned by user");
       return Response.json({
         error: "CONVERSATION_NOT_FOUND",
         message: "Conversation not found or you don't have permission to delete it"
       }, { status: 404 });
     }
 
-    console.log("Step 3 SUCCESS: Conversation found and owned by user");
+    console.log("Step 4 SUCCESS: Conversation found and owned by user");
 
-    // Delete conversation (messages will be cascade deleted)
-    console.log("Step 4: Deleting conversation from database...");
-    await db.conversation.delete({
-      where: { id: conversationId },
-    });
-    console.log("Step 4 SUCCESS: Conversation deleted successfully");
+    // Step 5: Delete conversation with timeout and retry logic
+    console.log("Step 5: Deleting conversation from database...");
+    try {
+      await Promise.race([
+        db.conversation.delete({
+          where: { id: conversationId },
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Delete operation timeout')), 20000)
+        )
+      ]);
+      console.log("Step 5 SUCCESS: Conversation deleted successfully");
+    } catch (deleteError) {
+      console.error("Step 5 FAILED: Delete error:", deleteError);
+
+      // Check if it's a timeout or actual error
+      if (deleteError.message?.includes('timeout')) {
+        return Response.json({
+          error: "TIMEOUT_ERROR",
+          message: "Delete operation timed out. The conversation may have been deleted. Please refresh the page."
+        }, { status: 408 });
+      }
+
+      // Re-throw for general error handling
+      throw deleteError;
+    }
 
     console.log("=== DELETE CONVERSATION API SUCCESS ===");
     return new Response(null, { status: 204 });
 
   } catch (error: any) {
     console.error("=== DELETE CONVERSATION API ERROR ===");
-    console.error("Error details:", error);
+    console.error("Error type:", typeof error);
+    console.error("Error message:", error?.message);
+    console.error("Error code:", error?.code);
+    console.error("Error stack:", error?.stack);
+    console.error("Full error object:", JSON.stringify(error, null, 2));
+
+    // Handle specific Prisma errors
+    if (error?.code === 'P2025') {
+      console.error("Prisma P2025: Record not found");
+      return Response.json({
+        error: "CONVERSATION_NOT_FOUND",
+        message: "Conversation not found"
+      }, { status: 404 });
+    }
+
+    if (error?.code === 'P2002') {
+      console.error("Prisma P2002: Unique constraint violation");
+      return Response.json({
+        error: "CONSTRAINT_ERROR",
+        message: "Database constraint error"
+      }, { status: 409 });
+    }
+
+    // Handle connection errors
+    if (error?.message?.includes('connect') ||
+        error?.message?.includes('timeout') ||
+        error?.code === 'ECONNREFUSED' ||
+        error?.code === 'ETIMEDOUT') {
+      console.error("Database connection error detected");
+      return Response.json({
+        error: "CONNECTION_ERROR",
+        message: "Database connection failed. Please try again in a moment."
+      }, { status: 503 });
+    }
 
     // Handle authentication errors
     if (error?.message?.includes('User not found') ||
-        error?.message?.includes('not authenticated')) {
+        error?.message?.includes('not authenticated') ||
+        error?.message?.includes('Authentication timeout')) {
       console.error("Authentication error detected");
       return Response.json({
         error: "AUTH_REQUIRED",
@@ -121,19 +235,12 @@ export async function DELETE(
       }, { status: 401 });
     }
 
-    // Handle database errors
-    if (error?.code === 'P2025') {
-      // Prisma error: Record not found
-      return Response.json({
-        error: "CONVERSATION_NOT_FOUND",
-        message: "Conversation not found"
-      }, { status: 404 });
-    }
-
-    // Generic error handler
+    // Generic error handler with more details for debugging
+    console.error("Unhandled error - returning 500");
     return Response.json({
       error: "INTERNAL_ERROR",
-      message: "An unexpected error occurred while deleting the conversation"
+      message: "An unexpected error occurred while deleting the conversation",
+      details: process.env.NODE_ENV === 'development' ? error?.message : undefined
     }, { status: 500 });
   }
 }

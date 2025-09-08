@@ -127,7 +127,7 @@ export function ChatInterface() {
         }
       }
 
-      setError(new Error(errorMessage));
+      setError(errorMessage);
       throw error; // Re-throw so the UI can handle it
     }
   };

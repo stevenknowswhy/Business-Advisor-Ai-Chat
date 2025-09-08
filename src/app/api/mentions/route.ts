@@ -66,8 +66,8 @@ export async function POST(req: NextRequest) {
         advisorIds: mentionedAdvisorIds,
         advisors: mentionedAdvisors.map(advisor => ({
           id: advisor.id,
-          name: advisor.persona?.name || "Unknown",
-          role: advisor.roleDefinition || "AI Advisor",
+          name: (advisor.persona as any)?.name || "Unknown",
+          role: (advisor.roleDefinition as any) || "AI Advisor",
           metadata: advisor.metadata,
         })),
         count: mentionedAdvisorIds.length,

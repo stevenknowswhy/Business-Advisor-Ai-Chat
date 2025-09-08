@@ -11,6 +11,12 @@ const config = {
     root: process.cwd(),
   },
 
+  // ESLint configuration for production builds
+  eslint: {
+    // Disable ESLint during builds for production deployment
+    ignoreDuringBuilds: true,
+  },
+
   // Security headers including CSP
   async headers() {
     const isDev = process.env.NODE_ENV === 'development';

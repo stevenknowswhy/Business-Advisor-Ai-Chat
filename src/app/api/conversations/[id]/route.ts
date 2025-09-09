@@ -273,32 +273,60 @@ export async function DELETE(
     await directDb.$queryRaw`SELECT 1`;
     console.log("Step 3 SUCCESS: Database connection verified");
 
-    // Step 4: Find conversation
-    console.log("Step 4: Finding conversation...");
+    // Step 4: Check if conversation exists and belongs to user
+    console.log("Step 4: Checking conversation ownership...");
     const existingConversation = await directDb.conversation.findUnique({
-      where: {
-        id: conversationId,
-        userId: user.id,
-      },
+      where: { id: conversationId },
+      select: {
+        id: true,
+        userId: true,
+        title: true,
+        createdAt: true,
+      }
     });
 
     if (!existingConversation) {
-      console.log("Step 4 FAILED: Conversation not found or not owned by user");
+      console.log("Step 4 FAILED: Conversation not found");
       return Response.json({
         error: "CONVERSATION_NOT_FOUND",
-        message: "Conversation not found or you don't have permission to delete it"
+        message: "Conversation not found in database"
       }, { status: 404 });
     }
-    console.log("Step 4 SUCCESS: Conversation found");
 
-    // Step 5: Delete conversation
-    console.log("Step 5: Deleting conversation...");
-    await directDb.conversation.delete({
+    // Check if user owns the conversation (authorization)
+    if (existingConversation.userId !== user.id) {
+      console.log("Step 4 FAILED: User does not own this conversation", {
+        conversationUserId: existingConversation.userId,
+        currentUserId: user.id,
+      });
+      return Response.json({
+        error: "UNAUTHORIZED",
+        message: "You don't have permission to delete this conversation"
+      }, { status: 403 });
+    }
+
+    console.log("Step 4 SUCCESS: Conversation found and owned by user", {
+      id: existingConversation.id,
+      title: existingConversation.title,
+      userId: existingConversation.userId.substring(0, 10) + "...",
+    });
+
+    // Step 5: Delete the conversation (this will cascade delete messages due to schema)
+    console.log("Step 5: Deleting conversation from database...");
+    const deletedConversation = await directDb.conversation.delete({
       where: { id: conversationId },
     });
-    console.log("Step 5 SUCCESS: Conversation deleted");
 
-    console.log("=== DELETE CONVERSATION API SUCCESS ===");
+    console.log("Step 5 SUCCESS: Conversation deleted successfully", {
+      deletedId: deletedConversation.id,
+      deletedTitle: deletedConversation.title,
+    });
+
+    console.log("=== DELETE CONVERSATION API SUCCESS ===", {
+      conversationId,
+      userId: user.id.substring(0, 10) + "...",
+    });
+
     return new Response(null, { status: 204 });
 
   } catch (error: any) {

@@ -52,7 +52,34 @@ export default function ConversationDeleteTestPage() {
     }
   };
 
-  const deleteConversationTransaction = async () => {
+
+  const deleteConversationCascade = async () => {
+    if (!isSignedIn) {
+      addResult(false, 'Must be signed in to delete (cascade)');
+      return;
+    }
+    if (!currentConv?.id) {
+      addResult(false, 'No current test conversation to delete (cascade)');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/test/conversation-delete/cascade/${currentConv.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        addResult(true, `Cascade-deleted conversation ${currentConv.id}`, data);
+        setCurrentConv(null);
+        await listMyTests();
+      } else {
+        addResult(false, `Cascade deletion failed: ${data.error}`, data);
+      }
+    } catch (e) {
+      addResult(false, 'Network error deleting conversation (cascade)', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
     if (!isSignedIn) {
       addResult(false, 'Must be signed in to delete');
       return;
@@ -67,6 +94,10 @@ export default function ConversationDeleteTestPage() {
       const data = await res.json();
       if (res.ok) {
         addResult(true, `Deleted conversation ${currentConv.id} with transaction`, data);
+        // Clear current selection to avoid repeated delete attempts on same ID
+        setCurrentConv(null);
+        // Refresh list after deletion
+        await listMyTests();
       } else {
         addResult(false, `Deletion failed: ${data.error}`, data);
       }
@@ -157,7 +188,7 @@ export default function ConversationDeleteTestPage() {
               <p className="text-sm text-gray-600">ID: {user?.id}</p>
             </div>
             <SignOutButton>
-              <button className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Sign Out</button>
+              <button type="button" className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Sign Out</button>
             </SignOutButton>
           </div>
         ) : (
@@ -167,7 +198,7 @@ export default function ConversationDeleteTestPage() {
               <p className="text-sm text-gray-600">Please sign in to run the test</p>
             </div>
             <SignInButton>
-              <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Sign In</button>
+              <button type="button" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Sign In</button>
             </SignInButton>
           </div>
         )}
@@ -180,10 +211,11 @@ export default function ConversationDeleteTestPage() {
             <p className="text-sm text-gray-600">Current Test Conversation: {currentConv?.id || 'None'}</p>
           </div>
           <div className="p-4 flex flex-wrap gap-3">
-            <button onClick={createTestConversation} disabled={loading} className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50">Create Test Conversation</button>
-            <button onClick={deleteConversationTransaction} disabled={loading || !currentConv} className="px-4 py-2 bg-red-600 text-white rounded disabled:opacity-50">Delete Conversation (Transactional)</button>
-            <button onClick={verifyDeletion} disabled={loading || !currentConv} className="px-4 py-2 bg-indigo-600 text-white rounded disabled:opacity-50">Verify Deletion</button>
-            <button onClick={listMyTests} disabled={loading} className="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50">List My Test Conversations</button>
+            <button type="button" onClick={createTestConversation} disabled={loading} className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50">Create Test Conversation</button>
+            <button type="button" onClick={deleteConversationTransaction} disabled={loading || !currentConv} className="px-4 py-2 bg-red-600 text-white rounded disabled:opacity-50">Delete Conversation (Transactional)</button>
+            <button type="button" onClick={deleteConversationCascade} disabled={loading || !currentConv} className="px-4 py-2 bg-orange-600 text-white rounded disabled:opacity-50">Delete via Cascade (Single)</button>
+            <button type="button" onClick={verifyDeletion} disabled={loading || !currentConv} className="px-4 py-2 bg-indigo-600 text-white rounded disabled:opacity-50">Verify Deletion</button>
+            <button type="button" onClick={listMyTests} disabled={loading} className="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50">List My Test Conversations</button>
           </div>
 
           <div className="p-4">

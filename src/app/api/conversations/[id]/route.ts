@@ -311,15 +311,17 @@ export async function DELETE(
       userId: existingConversation.userId.substring(0, 10) + "...",
     });
 
-    // Step 5: Delete the conversation (this will cascade delete messages due to schema)
-    console.log("Step 5: Deleting conversation from database...");
-    const deletedConversation = await directDb.conversation.delete({
-      where: { id: conversationId },
-    });
+    // Step 5: Transactionally delete children first, then the conversation
+    console.log("Step 5: Transactionally deleting children and conversation...");
+    await directDb.$transaction([
+      directDb.message.deleteMany({ where: { conversationId } }),
+      directDb.threadSummary.deleteMany({ where: { conversationId } }),
+      directDb.advisorMemory.deleteMany({ where: { conversationId } }),
+      directDb.conversation.delete({ where: { id: conversationId } }),
+    ]);
 
-    console.log("Step 5 SUCCESS: Conversation deleted successfully", {
-      deletedId: deletedConversation.id,
-      deletedTitle: deletedConversation.title,
+    console.log("Step 5 SUCCESS: Conversation and dependents deleted", {
+      conversationId,
     });
 
     console.log("=== DELETE CONVERSATION API SUCCESS ===", {

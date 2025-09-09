@@ -80,6 +80,7 @@ export default function ConversationDeleteTestPage() {
     }
   };
 
+  const deleteConversationTransaction = async () => {
     if (!isSignedIn) {
       addResult(false, 'Must be signed in to delete');
       return;
@@ -230,7 +231,7 @@ export default function ConversationDeleteTestPage() {
                       <p className="text-xs text-gray-500">Created: {new Date(c.createdAt).toLocaleString()}</p>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => setCurrentConv(c)} className="px-3 py-1 bg-blue-600 text-white rounded">Use</button>
+                      <button type="button" onClick={() => setCurrentConv(c)} className="px-3 py-1 bg-blue-600 text-white rounded">Use</button>
                     </div>
                   </div>
                 ))}

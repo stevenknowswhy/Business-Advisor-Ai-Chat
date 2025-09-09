@@ -4,7 +4,7 @@
  */
 
 import { NextRequest } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, MessageSender } from "@prisma/client";
 import { auth, currentUser } from "@clerk/nextjs/server";
 
 // Create direct Prisma client for testing
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
       const message = await testDb.message.create({
         data: {
           content: `AUTH_TEST_MESSAGE_${i}_${Date.now()}: This is a test message for authenticated deletion testing. Created for user ${user.id} at ${new Date().toISOString()}`,
-          sender: i % 2 === 0 ? "user" : "advisor",
+          sender: i % 2 === 0 ? MessageSender.user : MessageSender.advisor,
           conversationId: testConversation.id,
         }
       });

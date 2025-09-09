@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
       const message = await testDb.message.create({
         data: {
           content: `AUTH_TEST_MESSAGE_${i}_${Date.now()}: This is a test message for authenticated deletion testing. Created for user ${user.id} at ${new Date().toISOString()}`,
-          sender: i % 2 === 0 ? "user" : "assistant",
+          sender: i % 2 === 0 ? "user" : "advisor",
           conversationId: testConversation.id,
         }
       });

@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
       const message = await testDb.message.create({
         data: {
           content: `TEST_MESSAGE_${i}_${Date.now()}: This is a test message for deletion testing. Created at ${new Date().toISOString()}`,
-          sender: i % 2 === 0 ? "user" : "assistant",
+          sender: i % 2 === 0 ? "user" : "advisor",
           conversationId: testConversation.id,
         }
       });

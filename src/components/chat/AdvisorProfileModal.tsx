@@ -70,6 +70,8 @@ export function AdvisorProfileModal({ advisor, isOpen, onClose }: AdvisorProfile
                     type="button"
                     className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     onClick={onClose}
+                    title="Close advisor profile"
+                    aria-label="Close advisor profile modal"
                   >
                     <XMarkIcon className="h-6 w-6" />
                   </button>

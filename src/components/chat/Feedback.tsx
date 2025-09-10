@@ -120,7 +120,13 @@ export function FeedbackModal({
       <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="text-sm font-medium">Tell us what went wrong</h3>
-          <button aria-label="Close" onClick={onClose} className="p-1 rounded hover:bg-gray-100">
+          <button
+            type="button"
+            aria-label="Close feedback form"
+            onClick={onClose}
+            className="p-1 rounded hover:bg-gray-100"
+            title="Close feedback form"
+          >
             <XMarkIcon className="w-5 h-5 text-gray-500" />
           </button>
         </div>
@@ -147,20 +153,47 @@ export function FeedbackModal({
           {reason === "other" && (
             <div>
               <label className="block text-xs text-gray-600 mb-1">Other (please specify)</label>
-              <textarea className="w-full border rounded p-2 text-sm" rows={2} value={other} onChange={e => setOther(e.target.value)} />
+              <textarea
+                className="w-full border rounded p-2 text-sm"
+                rows={2}
+                value={other}
+                onChange={e => setOther(e.target.value)}
+                aria-label="Specify other reason for feedback"
+                title="Please specify your reason for this feedback"
+                placeholder="Please describe your specific reason..."
+              />
             </div>
           )}
 
           <div>
             <label className="block text-xs text-gray-600 mb-1">Additional Comments (optional)</label>
-            <textarea className="w-full border rounded p-2 text-sm" rows={3} value={comments} onChange={e => setComments(e.target.value)} />
+            <textarea
+              className="w-full border rounded p-2 text-sm"
+              rows={3}
+              value={comments}
+              onChange={e => setComments(e.target.value)}
+              aria-label="Additional comments for feedback"
+              title="Provide any additional comments about your feedback"
+              placeholder="Share any additional thoughts or details..."
+            />
           </div>
         </div>
         <div className="flex items-center justify-end gap-2 p-4 border-t">
-          <button className="px-3 py-1.5 text-sm rounded border" onClick={onClose}>Cancel</button>
           <button
+            type="button"
+            className="px-3 py-1.5 text-sm rounded border"
+            onClick={onClose}
+            aria-label="Cancel feedback submission"
+            title="Cancel and close feedback form"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
             className="px-3 py-1.5 text-sm rounded bg-blue-600 text-white hover:bg-blue-700"
             onClick={() => onSubmit({ reason, other, comments })}
+            aria-label="Submit feedback"
+            title="Submit your feedback"
           >
             Submit
           </button>

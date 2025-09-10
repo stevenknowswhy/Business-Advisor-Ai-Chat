@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useUser, type User } from "@clerk/nextjs";
 // Use the correct type from useChat hook
 type Message = {
   id: string;
@@ -21,6 +22,7 @@ interface MessageListProps {
 }
 
 export function MessageList({ messages, advisors, isLoading, onEditMessage, onDeleteMessage }: MessageListProps) {
+  const { user } = useUser();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -79,6 +81,7 @@ export function MessageList({ messages, advisors, isLoading, onEditMessage, onDe
               <MessageBubble
                 message={message}
                 advisors={advisors}
+                user={user}
                 onEditMessage={onEditMessage}
                 onDeleteMessage={onDeleteMessage}
                 isLoading={isLoading}
@@ -98,12 +101,14 @@ export function MessageList({ messages, advisors, isLoading, onEditMessage, onDe
 function MessageBubble({
   message,
   advisors,
+  user,
   onEditMessage,
   onDeleteMessage,
   isLoading
 }: {
   message: Message;
   advisors: Advisor[];
+  user: User | null | undefined; // Clerk user object with proper typing
   onEditMessage?: (messageId: string, newContent: string) => Promise<void>;
   onDeleteMessage?: (messageId: string) => Promise<void>;
   isLoading?: boolean;
@@ -119,7 +124,12 @@ function MessageBubble({
         <div className="flex-shrink-0">
           {isUser ? (
             <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">You</span>
+              <span className="text-white text-sm font-medium">
+                {user?.firstName?.charAt(0)?.toUpperCase() ||
+                 user?.username?.charAt(0)?.toUpperCase() ||
+                 user?.emailAddresses?.[0]?.emailAddress?.charAt(0)?.toUpperCase() ||
+                 "U"}
+              </span>
             </div>
           ) : advisor?.image ? (
             <img
@@ -139,7 +149,14 @@ function MessageBubble({
           {/* Sender Name and Time */}
           <div className={`flex items-center space-x-2 mb-1 ${isUser ? "flex-row-reverse space-x-reverse" : ""}`}>
             <span className={isUser ? "text-sm font-medium text-white" : "text-sm font-medium text-gray-900"}>
-              {isUser ? "You" : advisor?.name || "AI Advisor"}
+              {isUser ? (
+                user?.firstName ||
+                user?.username ||
+                user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] ||
+                "You"
+              ) : (
+                advisor?.name || "AI Advisor"
+              )}
             </span>
             <span className={isUser ? "text-xs text-blue-100" : "text-xs text-gray-500"}>
               {formatMessageTime(new Date())}

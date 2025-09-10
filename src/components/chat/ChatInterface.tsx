@@ -8,7 +8,7 @@ import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
 import { ConversationHeader } from "./ConversationHeader";
 import { useAdvisorChat, type Advisor, type Conversation } from "~/lib/chat";
-import { AdvisorsAPI, ConversationsAPI } from "~/lib/api";
+import { AdvisorsAPI, ConversationsAPI, MessagesAPI } from "~/lib/api";
 
 export function ChatInterface() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -28,6 +28,7 @@ export function ChatInterface() {
     activeAdvisorId,
     switchAdvisor,
     setMessages,
+    conversationData,
   } = useAdvisorChat(currentConversation?.id);
 
   // Load initial data
@@ -39,10 +40,10 @@ export function ChatInterface() {
           AdvisorsAPI.getAll(),
           ConversationsAPI.getAll(),
         ]);
-        
+
         setAdvisors(advisorsData);
         setConversations(conversationsData);
-        
+
         // If no conversations exist, create a new one
         if (conversationsData.length === 0) {
           const newConversation = await ConversationsAPI.create({
@@ -51,10 +52,19 @@ export function ChatInterface() {
           });
           setCurrentConversation(newConversation);
           setConversations([newConversation]);
+          setMessages([]);
         } else {
-          // Load the most recent conversation
+          // Load the most recent conversation fully (with messages)
           const latestConversation = await ConversationsAPI.getById(conversationsData[0]!.id);
           setCurrentConversation(latestConversation);
+          const loaded = (latestConversation.messages || []).map((m: any) => ({
+            id: m.id,
+            role: m.sender === 'user' ? 'user' : m.sender === 'advisor' ? 'assistant' : 'system',
+            content: m.content,
+            advisor: (m as any).advisor?.id,
+            createdAt: m.createdAt,
+          }));
+          setMessages(loaded);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load data");
@@ -65,6 +75,16 @@ export function ChatInterface() {
 
     loadData();
   }, []);
+
+  // Reflect dynamic conversation updates (e.g., new titles) into sidebar and header
+  useEffect(() => {
+    if (!currentConversation || !conversationData?.title) return;
+    if (conversationData.title !== currentConversation.title) {
+      const updated = { ...currentConversation, title: conversationData.title } as any;
+      setCurrentConversation(updated);
+      setConversations(prev => prev.map(c => c.id === updated.id ? { ...c, title: updated.title } : c));
+    }
+  }, [conversationData?.title, currentConversation]);
 
   const handleNewConversation = async () => {
     try {
@@ -83,6 +103,15 @@ export function ChatInterface() {
     try {
       const conversation = await ConversationsAPI.getById(conversationId);
       setCurrentConversation(conversation);
+      // Replace current message list with loaded messages
+      const loaded = (conversation.messages || []).map((m: any) => ({
+        id: m.id,
+        role: m.sender === 'user' ? 'user' : m.sender === 'advisor' ? 'assistant' : 'system',
+        content: m.content,
+        advisor: (m as any).advisor?.id,
+        createdAt: m.createdAt,
+      }));
+      setMessages(loaded);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load conversation");
     }
@@ -208,6 +237,92 @@ export function ChatInterface() {
     handleSubmit(e);
   };
 
+  const handleEditMessage = async (messageId: string, newContent: string) => {
+    try {
+      console.log("Editing message:", messageId, "with new content:", newContent.substring(0, 50) + "...");
+
+      // Update the message via API
+      const result = await MessagesAPI.update(messageId, { content: newContent });
+      console.log("Message updated successfully:", result);
+
+      // Update local messages state
+      setMessages(prevMessages =>
+        prevMessages.map(msg =>
+          msg.id === messageId
+            ? { ...msg, content: newContent }
+            : msg
+        )
+      );
+
+      // Regenerate AI response by resubmitting the edited message
+      // Find the message index to remove all subsequent messages
+      const messageIndex = messages.findIndex(msg => msg.id === messageId);
+      if (messageIndex !== -1) {
+        // Remove all messages after the edited one
+        const messagesUpToEdit = messages.slice(0, messageIndex + 1);
+        setMessages(messagesUpToEdit.map(msg =>
+          msg.id === messageId
+            ? { ...msg, content: newContent }
+            : msg
+        ));
+
+        // Trigger a new AI response with the edited message
+        const editedMessage = { ...messages[messageIndex], content: newContent };
+        if (editedMessage) {
+          // Simulate form submission with the edited message
+          const formData = new FormData();
+          formData.append('message', newContent);
+
+          // Use the existing handleSubmit but with the edited content
+          // We'll need to temporarily set the input to the new content
+          handleInputChange({ target: { value: newContent } } as any);
+
+          // Submit after a brief delay to ensure state is updated
+          setTimeout(() => {
+            const fakeEvent = {
+              preventDefault: () => {},
+              currentTarget: formData
+            } as any;
+            handleSubmit(fakeEvent);
+          }, 100);
+        }
+      }
+
+    } catch (error) {
+      console.error("Failed to edit message:", error);
+      setError(error instanceof Error ? error.message : "Failed to edit message");
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      console.log("Deleting message:", messageId);
+
+      // Delete the single message via API
+      const result = await MessagesAPI.delete(messageId);
+      console.log("Message deleted successfully:", result);
+
+      // Update local messages state by removing only the deleted message
+      setMessages(prevMessages =>
+        prevMessages.filter(msg => msg.id !== messageId)
+      );
+
+      // Update conversations list to reflect the change
+      if (currentConversation) {
+        const updatedConversations = conversations.map(conv =>
+          conv.id === currentConversation.id
+            ? { ...conv, updatedAt: new Date() }
+            : conv
+        );
+        setConversations(updatedConversations);
+      }
+
+    } catch (error) {
+      console.error("Failed to delete message:", error);
+      setError(error instanceof Error ? error.message : "Failed to delete message");
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -315,7 +430,7 @@ export function ChatInterface() {
       <div className="flex-1 flex flex-col">
         {/* Conversation Header */}
         <ConversationHeader
-          conversation={currentConversation}
+          conversation={currentConversation ? { ...currentConversation, title: conversationData?.title || currentConversation.title } : null}
           activeAdvisor={advisors.find(a => a.id === activeAdvisorId)}
           advisorSwitched={advisorSwitched}
         />
@@ -326,6 +441,8 @@ export function ChatInterface() {
             messages={messages}
             advisors={advisors}
             isLoading={isChatLoading}
+            onEditMessage={handleEditMessage}
+            onDeleteMessage={handleDeleteMessage}
           />
         </div>
 

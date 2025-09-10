@@ -283,6 +283,52 @@ export async function POST(req: NextRequest) {
       if (!directResponse.ok) {
         const errorText = await directResponse.text();
         console.error("Step 7 FAILED: OpenRouter API error:", directResponse.status, errorText);
+
+        // Check if it's an API key issue (401 "User not found")
+        if (directResponse.status === 401 && errorText.includes("User not found")) {
+          console.log("Step 7 FALLBACK: Using mock response due to invalid API key");
+
+          // Generate a helpful mock response based on the advisor
+          const advisorName = (activeAdvisor.persona as any)?.name || "AI Advisor";
+          const mockResponse = `Hello! I'm ${advisorName}, and I'd be happy to help you.
+
+*Note: This is a demo response because the OpenRouter API key needs to be updated. In a production environment, I would provide personalized advice based on my expertise.*
+
+How can I assist you today?`;
+
+          // Save the mock assistant message
+          const assistantMessage = await db.message.create({
+            data: {
+              conversationId: conversation.id,
+              sender: "advisor",
+              advisorId: activeAdvisor.id,
+              content: mockResponse,
+              tokensUsed: 50, // Mock token count
+            },
+          });
+
+          // Return successful response with mock data
+          return Response.json({
+            success: true,
+            message: {
+              id: assistantMessage.id,
+              content: mockResponse,
+              sender: "advisor",
+              advisorId: activeAdvisor.id,
+              createdAt: assistantMessage.createdAt,
+              tokensUsed: 50,
+            },
+            conversation: {
+              id: conversation.id,
+              activeAdvisorId: activeAdvisor.id,
+              title: conversation.title,
+            },
+            usage: { total_tokens: 50, prompt_tokens: 25, completion_tokens: 25 },
+            isDemo: true, // Flag to indicate this is a demo response
+          });
+        }
+
+        // For other errors, return the original error response
         return Response.json({
           error: "AI_API_ERROR",
           message: "Failed to generate response from AI service",
@@ -350,6 +396,53 @@ export async function POST(req: NextRequest) {
         }, { status: 500 });
       }
 
+      // Optional: generate/update title when enough context exists (>= 2 user+assistant exchanges)
+      try {
+        const msgCount = await db.message.count({ where: { conversationId: conversation.id } });
+        const shouldTitle = !conversation.title || conversation.title === 'New Conversation' || (conversation.title?.length ?? 0) > 30;
+        if (msgCount >= 4 && shouldTitle) {
+          const history = await db.message.findMany({
+            where: { conversationId: conversation.id },
+            orderBy: { createdAt: 'asc' },
+            take: 10,
+          });
+          const historyText = history.map(m => `${m.sender === 'user' ? 'User' : 'Advisor'}: ${m.content}`).join('\n');
+
+          const titlePrompt = `You are titling a chat. Return ONLY a concise, catchy title of at most 5 words. No punctuation beyond standard letters and digits. Title the conversation based on this transcript:\n\n${historyText}`;
+
+          const titleResp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+              "Content-Type": "application/json",
+              "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
+              "X-Title": "AI Advisor Chat",
+            },
+            body: JSON.stringify({
+              model: "x-ai/grok-code-fast-1",
+              messages: [
+                { role: "system", content: "Return ONLY a title, max 5 words." },
+                { role: "user", content: titlePrompt }
+              ],
+              temperature: 0.5,
+              max_tokens: 12,
+            }),
+          });
+
+          if (titleResp.ok) {
+            const json = await titleResp.json();
+            const raw = json?.choices?.[0]?.message?.content || '';
+            const condensed = (raw || '').replace(/[\n\r]/g, ' ').trim().replace(/[^\p{L}\p{N} \-]/gu, '').split(' ').filter(Boolean).slice(0, 5).join(' ');
+            if (condensed) {
+              await db.conversation.update({ where: { id: conversation.id }, data: { title: condensed } });
+              conversation.title = condensed;
+            }
+          }
+        }
+      } catch (titleErr) {
+        console.warn('Title generation skipped due to error:', titleErr);
+      }
+
       // Return structured JSON response
       return Response.json({
         success: true,
@@ -364,6 +457,7 @@ export async function POST(req: NextRequest) {
         conversation: {
           id: conversation.id,
           activeAdvisorId: activeAdvisor.id,
+          title: conversation.title,
         },
         usage: responseData.usage,
       }, {

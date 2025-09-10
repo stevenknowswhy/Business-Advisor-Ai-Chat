@@ -99,6 +99,7 @@ export function useAdvisorChat(conversationId?: string) {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           messages: newMessages,
           conversationId,
@@ -156,6 +157,7 @@ export function useAdvisorChat(conversationId?: string) {
         advisor: responseData.message.advisorId,
         createdAt: responseData.message.createdAt,
         tokensUsed: responseData.message.tokensUsed,
+        isDemo: responseData.isDemo || false, // Flag for demo responses
       };
 
       console.log('Adding assistant message to state:', assistantMessage);
@@ -166,12 +168,20 @@ export function useAdvisorChat(conversationId?: string) {
           responseData.conversation.activeAdvisorId !== activeAdvisorId) {
         console.log('Syncing advisor change from API:', responseData.conversation.activeAdvisorId);
         setActiveAdvisorId(responseData.conversation.activeAdvisorId as string);
+      }
 
-        // Update conversation data
-        setConversationData(prev => prev ? {
-          ...prev,
-          activeAdvisorId: responseData.conversation.activeAdvisorId,
-        } : null);
+      // Propagate conversation updates (e.g., title changes) to consumers
+      if (responseData.conversation) {
+        setConversationData(prev => ({
+          id: responseData.conversation.id ?? prev?.id ?? (conversationId || ''),
+          title: responseData.conversation.title ?? prev?.title ?? 'New Conversation',
+          createdAt: prev?.createdAt ?? new Date(),
+          updatedAt: new Date(),
+          activeAdvisor: prev?.activeAdvisor,
+          messages: prev?.messages ?? [],
+          messageCount: prev?.messageCount,
+          lastMessage: prev?.lastMessage,
+        } as any));
       }
 
       console.log('Chat API call completed successfully');
@@ -179,6 +189,7 @@ export function useAdvisorChat(conversationId?: string) {
       console.log('- Content length:', assistantMessage.content.length);
       console.log('- Tokens used:', assistantMessage.tokensUsed);
       console.log('- Active advisor:', responseData.conversation?.activeAdvisorId);
+      console.log('- Title:', responseData.conversation?.title);
     } catch (err) {
       console.error('Chat error:', err);
 

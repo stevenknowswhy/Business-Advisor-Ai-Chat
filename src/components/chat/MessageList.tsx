@@ -9,14 +9,18 @@ type Message = {
 };
 import { getAdvisorInitials, getAdvisorColor, formatMessageTime, type Advisor } from "~/lib/chat";
 import { TypingIndicator } from "./TypingIndicator";
+import { FeedbackControls, type FeedbackPayload } from "./Feedback";
+import { MessageActions } from "./MessageActions";
 
 interface MessageListProps {
   messages: any[];
   advisors: Advisor[];
   isLoading: boolean;
+  onEditMessage?: (messageId: string, newContent: string) => Promise<void>;
+  onDeleteMessage?: (messageId: string) => Promise<void>;
 }
 
-export function MessageList({ messages, advisors, isLoading }: MessageListProps) {
+export function MessageList({ messages, advisors, isLoading, onEditMessage, onDeleteMessage }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -75,6 +79,9 @@ export function MessageList({ messages, advisors, isLoading }: MessageListProps)
               <MessageBubble
                 message={message}
                 advisors={advisors}
+                onEditMessage={onEditMessage}
+                onDeleteMessage={onDeleteMessage}
+                isLoading={isLoading}
               />
             </div>
           );
@@ -88,7 +95,19 @@ export function MessageList({ messages, advisors, isLoading }: MessageListProps)
   );
 }
 
-function MessageBubble({ message, advisors }: { message: Message; advisors: Advisor[] }) {
+function MessageBubble({
+  message,
+  advisors,
+  onEditMessage,
+  onDeleteMessage,
+  isLoading
+}: {
+  message: Message;
+  advisors: Advisor[];
+  onEditMessage?: (messageId: string, newContent: string) => Promise<void>;
+  onDeleteMessage?: (messageId: string) => Promise<void>;
+  isLoading?: boolean;
+}) {
   const isUser = message.role === "user";
   // Fix: Find advisor by message.advisor (advisorId) instead of message.id
   const advisor = advisors.find(a => a.id === (message as any).advisor) || advisors[0];
@@ -119,10 +138,10 @@ function MessageBubble({ message, advisors }: { message: Message; advisors: Advi
         <div className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}>
           {/* Sender Name and Time */}
           <div className={`flex items-center space-x-2 mb-1 ${isUser ? "flex-row-reverse space-x-reverse" : ""}`}>
-            <span className="text-sm font-medium text-gray-900">
+            <span className={isUser ? "text-sm font-medium text-white" : "text-sm font-medium text-gray-900"}>
               {isUser ? "You" : advisor?.name || "AI Advisor"}
             </span>
-            <span className="text-xs text-gray-500">
+            <span className={isUser ? "text-xs text-blue-100" : "text-xs text-gray-500"}>
               {formatMessageTime(new Date())}
             </span>
           </div>
@@ -135,8 +154,30 @@ function MessageBubble({ message, advisors }: { message: Message; advisors: Advi
                 : "bg-white border border-gray-200 text-gray-900"
             }`}
           >
-            <MessageContent content={message.content} />
+            {/* Ensure readable text on dark (user) bubble by inverting prose colors */}
+            <MessageContent content={message.content} isUser={isUser} />
+            {/* Feedback controls for AI responses only */}
+            {!isUser && (
+              <FeedbackControls
+                messageId={(message as any).id}
+                onSubmit={async (payload: FeedbackPayload) => {
+                  // TODO: replace with API call or analytics event
+                  console.debug("feedback", payload);
+                }}
+              />
+            )}
           </div>
+
+          {/* Message Actions for user messages - positioned below the bubble */}
+          {isUser && onEditMessage && onDeleteMessage && (
+            <MessageActions
+              messageId={(message as any).id}
+              content={message.content}
+              onEdit={onEditMessage}
+              onDelete={onDeleteMessage}
+              isLoading={isLoading}
+            />
+          )}
 
           {/* Advisor Info (for non-user messages) */}
           {!isUser && advisor && (
@@ -150,34 +191,35 @@ function MessageBubble({ message, advisors }: { message: Message; advisors: Advi
   );
 }
 
-function MessageContent({ content }: { content: string }) {
+function MessageContent({ content, isUser = false }: { content: string; isUser?: boolean }) {
   // Handle @mentions highlighting
   const highlightMentions = (text: string) => {
-    return text.replace(/@(\w+(?:\s+\w+)*)/g, '<span class="font-semibold text-blue-600">@$1</span>');
+    const mentionColor = isUser ? 'text-blue-200' : 'text-blue-600';
+    return text.replace(/@(\w+(?:\s+\w+)*)/g, `<span class="font-semibold ${mentionColor}">@$1</span>`);
   };
 
   // Simple markdown-like formatting
   const formatContent = (text: string) => {
     let formatted = text;
-    
+
     // Bold text
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
+
     // Italic text
     formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    
+
     // Code blocks
     formatted = formatted.replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">$1</code>');
-    
+
     // Highlight mentions
     formatted = highlightMentions(formatted);
-    
+
     return formatted;
   };
 
   return (
     <div
-      className="prose prose-sm max-w-none"
+      className={`prose prose-sm max-w-none ${isUser ? 'prose-invert' : ''}`}
       dangerouslySetInnerHTML={{
         __html: formatContent(content).replace(/\n/g, '<br />'),
       }}

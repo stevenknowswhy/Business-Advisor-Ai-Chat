@@ -3,7 +3,9 @@ import type { Advisor, Conversation } from "./chat";
 // API client for conversations
 export class ConversationsAPI {
   static async getAll(): Promise<Conversation[]> {
-    const response = await fetch("/api/conversations");
+    const response = await fetch("/api/conversations", {
+      credentials: "include",
+    });
     if (!response.ok) {
       throw new Error("Failed to fetch conversations");
     }
@@ -11,7 +13,9 @@ export class ConversationsAPI {
   }
 
   static async getById(id: string): Promise<Conversation> {
-    const response = await fetch(`/api/conversations/${id}`);
+    const response = await fetch(`/api/conversations/${id}`, {
+      credentials: "include",
+    });
     if (!response.ok) {
       throw new Error("Failed to fetch conversation");
     }
@@ -22,6 +26,7 @@ export class ConversationsAPI {
     const response = await fetch("/api/conversations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(data),
     });
     if (!response.ok) {
@@ -34,6 +39,7 @@ export class ConversationsAPI {
     const response = await fetch(`/api/conversations/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(data),
     });
     if (!response.ok) {
@@ -53,6 +59,7 @@ export class ConversationsAPI {
       const response = await fetch(`/api/conversations/${id}`, {
         method: "DELETE",
         signal: controller.signal,
+        credentials: "include",
         headers: {
           'Content-Type': 'application/json',
         },
@@ -125,9 +132,40 @@ export class ConversationsAPI {
 // API client for advisors
 export class AdvisorsAPI {
   static async getAll(): Promise<Advisor[]> {
-    const response = await fetch("/api/advisors");
+    const response = await fetch("/api/advisors", {
+      credentials: "include",
+    });
     if (!response.ok) {
       throw new Error("Failed to fetch advisors");
+    }
+    return response.json();
+  }
+}
+
+// API client for messages
+export class MessagesAPI {
+  static async update(id: string, data: { content: string }): Promise<{ success: boolean; updatedMessage: any }> {
+    const response = await fetch(`/api/messages/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to update message");
+    }
+    return response.json();
+  }
+
+  static async delete(id: string): Promise<{ success: boolean; deletedCount: number; deletedMessageIds: string[] }> {
+    const response = await fetch(`/api/messages/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to delete message");
     }
     return response.json();
   }
@@ -151,6 +189,7 @@ export async function apiRequest<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const response = await fetch(url, {
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...options.headers,

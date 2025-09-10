@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { PlusIcon, ChatBubbleLeftIcon, UserGroupIcon, InformationCircleIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { PlusIcon, ChatBubbleLeftIcon, UserGroupIcon, InformationCircleIcon, TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { getAdvisorInitials, getAdvisorColor, formatMessageTime, type Advisor, type Conversation } from "~/lib/chat";
 import { AdvisorProfileModal } from "./AdvisorProfileModal";
 import { DeleteConversationDialog } from "./DeleteConversationDialog";
+import { AdvisorModal, type AdvisorFormData } from "./AdvisorModal";
 
 interface AdvisorRailProps {
   advisors: Advisor[];
@@ -15,6 +16,8 @@ interface AdvisorRailProps {
   onConversationSelect: (conversationId: string) => void;
   onNewConversation: () => void;
   onDeleteConversation?: (conversationId: string) => void;
+  onCreateAdvisor?: (advisorData: AdvisorFormData) => Promise<void>;
+  onUpdateAdvisor?: (advisorId: string, advisorData: AdvisorFormData) => Promise<void>;
 }
 
 export function AdvisorRail({
@@ -26,6 +29,8 @@ export function AdvisorRail({
   onConversationSelect,
   onNewConversation,
   onDeleteConversation,
+  onCreateAdvisor,
+  onUpdateAdvisor,
 }: AdvisorRailProps) {
   const [activeTab, setActiveTab] = useState<"advisors" | "conversations">("advisors");
   const [selectedAdvisorForProfile, setSelectedAdvisorForProfile] = useState<Advisor | null>(null);
@@ -33,6 +38,11 @@ export function AdvisorRail({
   const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Advisor modal state
+  const [isAdvisorModalOpen, setIsAdvisorModalOpen] = useState(false);
+  const [advisorToEdit, setAdvisorToEdit] = useState<Advisor | null>(null);
+  const [isAdvisorLoading, setIsAdvisorLoading] = useState(false);
 
   const handleShowProfile = (advisor: Advisor) => {
     setSelectedAdvisorForProfile(advisor);
@@ -69,6 +79,41 @@ export function AdvisorRail({
     if (isDeleting) return; // Prevent closing while deleting
     setIsDeleteDialogOpen(false);
     setConversationToDelete(null);
+  };
+
+  const handleCreateAdvisor = () => {
+    setAdvisorToEdit(null);
+    setIsAdvisorModalOpen(true);
+  };
+
+  const handleEditAdvisor = (advisor: Advisor) => {
+    setAdvisorToEdit(advisor);
+    setIsAdvisorModalOpen(true);
+  };
+
+  const handleSaveAdvisor = async (advisorData: AdvisorFormData) => {
+    setIsAdvisorLoading(true);
+    try {
+      if (advisorToEdit) {
+        // Editing existing advisor
+        await onUpdateAdvisor?.(advisorToEdit.id, advisorData);
+      } else {
+        // Creating new advisor
+        await onCreateAdvisor?.(advisorData);
+      }
+      setIsAdvisorModalOpen(false);
+      setAdvisorToEdit(null);
+    } catch (error) {
+      console.error("Failed to save advisor:", error);
+      throw error; // Let the modal handle the error
+    } finally {
+      setIsAdvisorLoading(false);
+    }
+  };
+
+  const handleCloseAdvisorModal = () => {
+    setIsAdvisorModalOpen(false);
+    setAdvisorToEdit(null);
   };
 
   return (
@@ -114,6 +159,8 @@ export function AdvisorRail({
             activeAdvisorId={activeAdvisorId}
             onAdvisorSelect={onAdvisorSelect}
             onShowProfile={handleShowProfile}
+            onCreateAdvisor={handleCreateAdvisor}
+            onEditAdvisor={handleEditAdvisor}
           />
         ) : (
           <ConversationsList
@@ -142,6 +189,15 @@ export function AdvisorRail({
         conversationTitle={conversationToDelete?.title}
         isDeleting={isDeleting}
       />
+
+      {/* Advisor Modal */}
+      <AdvisorModal
+        isOpen={isAdvisorModalOpen}
+        onClose={handleCloseAdvisorModal}
+        onSave={handleSaveAdvisor}
+        advisor={advisorToEdit}
+        isLoading={isAdvisorLoading}
+      />
     </>
   );
 }
@@ -151,14 +207,27 @@ function AdvisorsList({
   activeAdvisorId,
   onAdvisorSelect,
   onShowProfile,
+  onCreateAdvisor,
+  onEditAdvisor,
 }: {
   advisors: Advisor[];
   activeAdvisorId?: string;
   onAdvisorSelect: (advisorId: string) => void;
   onShowProfile: (advisor: Advisor) => void;
+  onCreateAdvisor: () => void;
+  onEditAdvisor: (advisor: Advisor) => void;
 }) {
   return (
     <div className="p-2">
+      {/* Add New Advisor Button */}
+      <button
+        type="button"
+        onClick={onCreateAdvisor}
+        className="w-full p-3 rounded-lg mb-3 bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+      >
+        <PlusIcon className="w-4 h-4" />
+        <span className="text-sm font-medium">Add New Advisor</span>
+      </button>
       {advisors.map((advisor) => (
         <div key={advisor.id} className="relative mb-2">
           <button
@@ -205,17 +274,31 @@ function AdvisorsList({
             </div>
           </button>
 
-          {/* Info Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onShowProfile(advisor);
-            }}
-            className="absolute top-2 right-2 p-1 rounded-full bg-white/80 hover:bg-white text-gray-500 hover:text-blue-600 transition-colors"
-            title={`View ${advisor.name}'s profile`}
-          >
-            <InformationCircleIcon className="w-4 h-4" />
-          </button>
+          {/* Action Buttons */}
+          <div className="absolute top-2 right-2 flex space-x-1">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditAdvisor(advisor);
+              }}
+              className="p-1 rounded-full bg-white/80 hover:bg-white text-gray-500 hover:text-green-600 transition-colors"
+              title={`Edit ${advisor.name}`}
+            >
+              <PencilIcon className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onShowProfile(advisor);
+              }}
+              className="p-1 rounded-full bg-white/80 hover:bg-white text-gray-500 hover:text-blue-600 transition-colors"
+              title={`View ${advisor.name}'s profile`}
+            >
+              <InformationCircleIcon className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       ))}
     </div>

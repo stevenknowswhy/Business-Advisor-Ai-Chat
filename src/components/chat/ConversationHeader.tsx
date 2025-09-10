@@ -1,18 +1,49 @@
 "use client";
 
 import { useState } from "react";
-import { PencilIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, InformationCircleIcon, CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { getAdvisorInitials, getAdvisorColor, type Advisor, type Conversation } from "~/lib/chat";
 import { AuthHeader } from "~/components/auth/AuthHeader";
+import { ConversationsAPI } from "~/lib/api";
 
 interface ConversationHeaderProps {
   conversation: Conversation | null;
   activeAdvisor?: Advisor;
   advisorSwitched?: boolean; // New prop to indicate recent advisor switch
+  onTitleUpdate?: (conversationId: string, newTitle: string) => void;
 }
 
-export function ConversationHeader({ conversation, activeAdvisor, advisorSwitched }: ConversationHeaderProps) {
+export function ConversationHeader({ conversation, activeAdvisor, advisorSwitched, onTitleUpdate }: ConversationHeaderProps) {
   const [showAdvisorInfo, setShowAdvisorInfo] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
+
+  const handleStartEditTitle = () => {
+    setEditTitle(conversation?.title || "");
+    setIsEditingTitle(true);
+  };
+
+  const handleSaveTitle = async () => {
+    if (!conversation || !editTitle.trim()) return;
+
+    setIsSavingTitle(true);
+    try {
+      await ConversationsAPI.update(conversation.id, { title: editTitle.trim() });
+      onTitleUpdate?.(conversation.id, editTitle.trim());
+      setIsEditingTitle(false);
+    } catch (error) {
+      console.error("Failed to update title:", error);
+      // Could add toast notification here
+    } finally {
+      setIsSavingTitle(false);
+    }
+  };
+
+  const handleCancelEditTitle = () => {
+    setIsEditingTitle(false);
+    setEditTitle("");
+  };
 
   if (!conversation) {
     return (
@@ -40,9 +71,49 @@ export function ConversationHeader({ conversation, activeAdvisor, advisorSwitche
             </div>
           )}
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              {conversation.title}
-            </h2>
+            {isEditingTitle ? (
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="text-lg font-semibold text-gray-900 bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSaveTitle();
+                    if (e.key === "Escape") handleCancelEditTitle();
+                  }}
+                  autoFocus
+                  disabled={isSavingTitle}
+                  aria-label="Edit conversation title"
+                  title="Edit the conversation title"
+                  placeholder="Enter conversation title"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveTitle}
+                  disabled={isSavingTitle || !editTitle.trim()}
+                  className="p-1 text-green-600 hover:text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Save title"
+                  aria-label="Save conversation title"
+                >
+                  <CheckIcon className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelEditTitle}
+                  disabled={isSavingTitle}
+                  className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Cancel editing"
+                  aria-label="Cancel editing conversation title"
+                >
+                  <XMarkIcon className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <h2 className="text-lg font-semibold text-gray-900">
+                {conversation.title}
+              </h2>
+            )}
             {activeAdvisor && (
               <p className="text-sm text-gray-600">
                 Currently chatting with <span className="font-medium">{activeAdvisor.name}</span>
@@ -68,7 +139,9 @@ export function ConversationHeader({ conversation, activeAdvisor, advisorSwitche
           </button>
           <button
             type="button"
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            onClick={handleStartEditTitle}
+            disabled={isEditingTitle}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Edit conversation title"
           >
             <PencilIcon className="w-5 h-5" />

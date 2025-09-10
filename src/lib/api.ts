@@ -140,6 +140,46 @@ export class AdvisorsAPI {
     }
     return response.json();
   }
+
+  static async create(advisorData: { firstName: string; lastName: string; title: string; jsonConfiguration: string; imageUrl?: string }): Promise<Advisor> {
+    const response = await fetch("/api/advisors", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(advisorData),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to create advisor");
+    }
+    return response.json();
+  }
+
+  static async update(id: string, advisorData: { firstName: string; lastName: string; title: string; jsonConfiguration: string; imageUrl?: string }): Promise<Advisor> {
+    const response = await fetch(`/api/advisors/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(advisorData),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to update advisor");
+    }
+    return response.json();
+  }
+
+  static async delete(id: string): Promise<{ success: boolean }> {
+    const response = await fetch(`/api/advisors/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to delete advisor");
+    }
+    return response.json();
+  }
 }
 
 // API client for messages

@@ -9,6 +9,7 @@ import { MessageInput } from "./MessageInput";
 import { ConversationHeader } from "./ConversationHeader";
 import { useAdvisorChat, type Advisor, type Conversation } from "~/lib/chat";
 import { AdvisorsAPI, ConversationsAPI, MessagesAPI } from "~/lib/api";
+import { type AdvisorFormData } from "./AdvisorModal";
 
 export function ChatInterface() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -323,12 +324,78 @@ export function ChatInterface() {
     }
   };
 
+  const handleCreateAdvisor = async (advisorData: AdvisorFormData) => {
+    try {
+      console.log("Creating advisor:", advisorData);
+
+      // Handle image upload if present
+      let imageUrl: string | undefined;
+      if (advisorData.image && typeof advisorData.image !== "string") {
+        // TODO: Implement image upload to storage service
+        // For now, we'll skip image upload
+        console.log("Image upload not yet implemented");
+      } else if (typeof advisorData.image === "string") {
+        imageUrl = advisorData.image;
+      }
+
+      const newAdvisor = await AdvisorsAPI.create({
+        firstName: advisorData.firstName,
+        lastName: advisorData.lastName,
+        title: advisorData.title,
+        jsonConfiguration: advisorData.jsonConfiguration,
+        imageUrl,
+      });
+
+      // Update local advisors list
+      setAdvisors(prev => [newAdvisor, ...prev]);
+
+      console.log("Advisor created successfully:", newAdvisor);
+    } catch (error) {
+      console.error("Failed to create advisor:", error);
+      throw error; // Let the modal handle the error
+    }
+  };
+
+  const handleUpdateAdvisor = async (advisorId: string, advisorData: AdvisorFormData) => {
+    try {
+      console.log("Updating advisor:", advisorId, advisorData);
+
+      // Handle image upload if present
+      let imageUrl: string | undefined;
+      if (advisorData.image && typeof advisorData.image !== "string") {
+        // TODO: Implement image upload to storage service
+        // For now, we'll skip image upload
+        console.log("Image upload not yet implemented");
+      } else if (typeof advisorData.image === "string") {
+        imageUrl = advisorData.image;
+      }
+
+      const updatedAdvisor = await AdvisorsAPI.update(advisorId, {
+        firstName: advisorData.firstName,
+        lastName: advisorData.lastName,
+        title: advisorData.title,
+        jsonConfiguration: advisorData.jsonConfiguration,
+        imageUrl,
+      });
+
+      // Update local advisors list
+      setAdvisors(prev => prev.map(advisor =>
+        advisor.id === advisorId ? updatedAdvisor : advisor
+      ));
+
+      console.log("Advisor updated successfully:", updatedAdvisor);
+    } catch (error) {
+      console.error("Failed to update advisor:", error);
+      throw error; // Let the modal handle the error
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your AI advisors...</p>
+          <p className="text-gray-600">Loading your advisors...</p>
         </div>
       </div>
     );
@@ -423,6 +490,8 @@ export function ChatInterface() {
           onConversationSelect={handleConversationSelect}
           onNewConversation={handleNewConversation}
           onDeleteConversation={handleDeleteConversation}
+          onCreateAdvisor={handleCreateAdvisor}
+          onUpdateAdvisor={handleUpdateAdvisor}
         />
       </div>
 
@@ -433,6 +502,15 @@ export function ChatInterface() {
           conversation={currentConversation ? { ...currentConversation, title: conversationData?.title || currentConversation.title } : null}
           activeAdvisor={advisors.find(a => a.id === activeAdvisorId)}
           advisorSwitched={advisorSwitched}
+          onTitleUpdate={(conversationId, newTitle) => {
+            // Update local state
+            if (currentConversation && currentConversation.id === conversationId) {
+              setCurrentConversation(prev => prev ? { ...prev, title: newTitle } : null);
+            }
+            setConversations(prev => prev.map(c =>
+              c.id === conversationId ? { ...c, title: newTitle } : c
+            ));
+          }}
         />
 
         {/* Messages */}

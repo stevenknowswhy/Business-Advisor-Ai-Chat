@@ -55,8 +55,8 @@ export async function GET(
     const user = await debugRequireUser();
     const { id: conversationId } = await params;
 
-    const conversation = await directDb.conversation.findUnique({
-      where: { 
+    const conversation = await directDb.conversation.findFirst({
+      where: {
         id: conversationId,
         userId: user.id, // Ensure user owns this conversation
       },

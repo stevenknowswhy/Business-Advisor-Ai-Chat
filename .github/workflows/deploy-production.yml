@@ -12,6 +12,8 @@ jobs:
   deploy-production:
     name: Trigger Vercel deploy and run health checks
     runs-on: ubuntu-latest
+    environment: Production
+
     timeout-minutes: 15
     env:
       DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}

@@ -282,6 +282,14 @@ jobs:
         run: curl -f ${{ secrets.PRODUCTION_BASE_URL }}/api/health
 ```
 
+#### Environment and Secrets
+- This workflow runs in the GitHub Environment named "Production" to scope secrets access.
+- Required Environment secrets:
+  - `VERCEL_DEPLOY_HOOK_URL`
+  - `PRODUCTION_BASE_URL`
+- Configure via: Repository Settings → Environments → Production → Secrets.
+
+
 #### **Environment Configuration**
 Required environment variables for production:
 - `DATABASE_URL`: Neon PostgreSQL connection string
@@ -306,6 +314,19 @@ vercel env add OPENROUTER_API_KEY
 vercel env add CLERK_SECRET_KEY
 vercel env add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 ```
+
+## 🔒 Security & Secrets
+
+- Do NOT commit environment files (`.env`, `.env.local`, `.env.production`). These are ignored via `.gitignore` and PRs including them will be rejected.
+- Configure secrets in the right place:
+  - GitHub Environment "Production" (used by CI): `VERCEL_DEPLOY_HOOK_URL`, `PRODUCTION_BASE_URL`.
+  - Vercel Project Environment Variables (runtime): `DATABASE_URL`, `OPENROUTER_API_KEY`, `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`.
+- Use `.env.example` with placeholders to document required variables for local development.
+- Our CI runs an automated Secret Scan on every push (working tree + recent history). If it flags a real secret, rotate it, remove it from code, and notify maintainers.
+- Historical secret cleanup is performed with BFG Repo‑Cleaner using regex rules for OpenRouter keys, Clerk keys, and `DATABASE_URL` values.
+
+See SECURITY.md for detailed policy, scanning rules, and the exact BFG replacement expressions.
+
 
 ## 📊 Performance & Monitoring
 

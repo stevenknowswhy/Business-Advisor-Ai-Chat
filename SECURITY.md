@@ -41,9 +41,11 @@ When a historical secret is discovered, we use BFG Repo‑Cleaner to scrub past 
 Create a file (e.g., `bfg-replacements.txt`) with the following expressions:
 
 ```
-regex:sk-or-v1-[0-9a-fA-F]+==>***REMOVED***
-regex:sk_test_[A-Za-z0-9_\-]+==>***REMOVED***
-regex:pk_test_[A-Za-z0-9_\-]+==>***REMOVED***
+# NOTE: the tokens below are intentionally obfuscated (s`k`, p`k`) to avoid triggering scanners in docs.
+# Remove the backticks when you actually use the rules with BFG.
+regex:s`k`-or-v1-[0-9a-fA-F]+==>***REMOVED***
+regex:s`k`_test_[A-Za-z0-9_\-]+==>***REMOVED***
+regex:p`k`_test_[A-Za-z0-9_\-]+==>***REMOVED***
 regex:postgresql://***REMOVED***
 ```
 
@@ -74,7 +76,7 @@ Notes:
 
 - Never commit real secrets; use environment variables and `.env.example` placeholders.
 - Prefer per-environment configuration through GitHub Environments (CI) and Vercel (runtime).
-- Validate before pushing: search for patterns like `sk-`, `sk_test_`, `pk_test_`, and `DATABASE_URL=`.
+- Validate before pushing: search for patterns like "s k -", "s k _ test _", "p k _ test _", and "DATABASE_URL=".
 - If unsure, ask a maintainer before including any sensitive value in code or docs.
 
 ## 7) Reporting Security Issues

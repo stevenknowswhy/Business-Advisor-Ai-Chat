@@ -20,9 +20,6 @@ model User {
 
 model Advisor {
   id             String          @id
-  firstName      String?
-  lastName       String?
-  imageUrl       String?
   schemaVersion  String
   status         AdvisorStatus   @default(active)
   persona        Json
@@ -34,6 +31,9 @@ model Advisor {
   tags           String[]        @default([])
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+  firstName      String?
+  imageUrl       String?
+  lastName       String?
   memories       AdvisorMemory[]
   conversations  Conversation[]
   messages       Message[]

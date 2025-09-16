@@ -2,6 +2,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 const isPublicRoute = createRouteMatcher([
   "/",
+  "/chat(.*)", // Allow public access to chat interface - Convex functions handle their own auth
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/test-chat(.*)",

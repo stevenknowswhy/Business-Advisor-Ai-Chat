@@ -1,5 +1,17 @@
 import type { Advisor, Conversation } from "./chat";
 
+/**
+ * @deprecated This file contains legacy API clients that use REST endpoints.
+ * These have been replaced by Convex real-time functions in ~/lib/convex-api.ts
+ *
+ * Migration guide:
+ * - ConversationsAPI -> useConversations, useCreateConversation, useUpdateConversation, useDeleteConversation
+ * - AdvisorsAPI -> useAdvisors, useCreateAdvisor, useUpdateAdvisor, useDeleteAdvisor
+ * - MessagesAPI -> useConversationMessages, useSendMessage, useUpdateMessage, useDeleteMessage
+ *
+ * This file will be removed in a future version.
+ */
+
 // API client for conversations
 export class ConversationsAPI {
   static async getAll(): Promise<Conversation[]> {

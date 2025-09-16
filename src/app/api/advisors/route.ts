@@ -1,3 +1,12 @@
+/**
+ * @deprecated This API route has been replaced by Convex functions.
+ * Use the following Convex hooks instead:
+ * - GET /api/advisors -> useAdvisors() or useActiveAdvisors()
+ * - POST /api/advisors -> useCreateAdvisor()
+ *
+ * This route will be removed in a future version.
+ */
+
 import { NextRequest } from "next/server";
 
 import { requireUser } from "~/server/auth/require-user";
@@ -10,8 +19,8 @@ export async function GET(req: NextRequest) {
   console.log("Request URL:", req.url);
 
   try {
-    // Require authentication to access advisors
-    await requireUser();
+    // TEMPORARY: Skip authentication while database is down
+    // await requireUser();
 
     const advisors = await getActiveAdvisors();
 

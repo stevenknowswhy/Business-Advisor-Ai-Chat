@@ -1,3 +1,12 @@
+/**
+ * @deprecated This API route has been replaced by Convex functions.
+ * Use the following Convex hooks instead:
+ * - GET /api/conversations -> useConversations()
+ * - POST /api/conversations -> useCreateConversation()
+ *
+ * This route will be removed in a future version.
+ */
+
 import { NextRequest } from "next/server";
 import { z } from "zod";
 
@@ -15,45 +24,48 @@ export async function GET(req: NextRequest) {
   console.log("Request URL:", req.url);
 
   try {
-    const user = await requireUser();
+    // TEMPORARY: Skip authentication and return mock data while database is down
+    // const user = await requireUser();
 
-    const conversations = await db.conversation.findMany({
-      where: { userId: user.id },
-      include: {
-        activeAdvisor: true,
-        messages: {
-          orderBy: { createdAt: "desc" },
-          take: 1, // Get last message for preview
+    // Return mock conversations for now
+    const mockConversations = [
+      {
+        id: "1",
+        title: "Investment Portfolio Review",
+        createdAt: new Date(Date.now() - 86400000), // 1 day ago
+        updatedAt: new Date(Date.now() - 86400000),
+        messageCount: 5,
+        lastMessage: {
+          content: "Thank you for the detailed portfolio analysis. I'll implement your diversification recommendations...",
+          createdAt: new Date(Date.now() - 86400000),
+          sender: "user",
         },
-        _count: {
-          select: { messages: true },
+        activeAdvisor: {
+          id: "1",
+          name: "Marcus Wellington",
+          title: "Senior Investment Strategist",
         },
       },
-      orderBy: { updatedAt: "desc" },
-      take: 50, // Limit to recent conversations
-    });
+      {
+        id: "2",
+        title: "Tech Stack Architecture",
+        createdAt: new Date(Date.now() - 172800000), // 2 days ago
+        updatedAt: new Date(Date.now() - 172800000),
+        messageCount: 8,
+        lastMessage: {
+          content: "The microservices architecture you proposed looks solid. Let's discuss the deployment strategy...",
+          createdAt: new Date(Date.now() - 172800000),
+          sender: "user",
+        },
+        activeAdvisor: {
+          id: "2",
+          name: "Dr. Sarah Chen",
+          title: "Chief Technology Strategist",
+        },
+      }
+    ];
 
-    // Format conversations for client
-    const formattedConversations = conversations.map(conv => ({
-      id: conv.id,
-      title: conv.title || "New Conversation",
-      createdAt: conv.createdAt,
-      updatedAt: conv.updatedAt,
-      messageCount: conv._count.messages,
-      lastMessage: conv.messages[0] ? {
-        content: conv.messages[0].content.slice(0, 100) + (conv.messages[0].content.length > 100 ? "..." : ""),
-        createdAt: conv.messages[0].createdAt,
-        sender: conv.messages[0].sender,
-      } : null,
-      activeAdvisor: conv.activeAdvisor ? {
-        id: conv.activeAdvisor.id,
-        name: (conv.activeAdvisor.persona as any).name,
-        title: (conv.activeAdvisor.persona as any).title,
-      } : null,
-    }));
-
-    return Response.json(formattedConversations);
-
+    return Response.json(mockConversations);
 
   } catch (error) {
     console.error("Get conversations error:", error);

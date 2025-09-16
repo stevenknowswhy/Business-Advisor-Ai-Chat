@@ -10,6 +10,8 @@ interface MessageInputProps {
   handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   isLoading: boolean;
   advisors: Advisor[];
+  onTypingStart?: () => void;
+  onTypingStop?: () => void;
 }
 
 export function MessageInput({
@@ -18,12 +20,29 @@ export function MessageInput({
   handleSubmit,
   isLoading,
   advisors,
+  onTypingStart,
+  onTypingStop,
 }: MessageInputProps) {
   const [showMentions, setShowMentions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mentionsRef = useRef<HTMLDivElement>(null);
+
+  // Custom submit handler that stops typing
+  const handleSubmitWithTyping = (e: React.FormEvent<HTMLFormElement>) => {
+    if (onTypingStop) {
+      onTypingStop();
+    }
+    handleSubmit(e);
+  };
+
+  // Handle blur to stop typing
+  const handleBlur = () => {
+    if (onTypingStop) {
+      onTypingStop();
+    }
+  };
 
   // Filter advisors based on mention query
   const filteredAdvisors = advisors.filter(advisor =>
@@ -35,11 +54,18 @@ export function MessageInput({
   const handleInputChangeWithMentions = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     const cursorPosition = e.target.selectionStart;
-    
+
+    // Trigger typing start when user starts typing
+    if (value.length > 0 && onTypingStart) {
+      onTypingStart();
+    } else if (value.length === 0 && onTypingStop) {
+      onTypingStop();
+    }
+
     // Check for @mention at cursor position
     const textBeforeCursor = value.substring(0, cursorPosition);
     const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
-    
+
     if (mentionMatch) {
       setMentionQuery(mentionMatch[1] || "");
       setShowMentions(true);
@@ -48,7 +74,7 @@ export function MessageInput({
       setShowMentions(false);
       setMentionQuery("");
     }
-    
+
     handleInputChange(e);
   };
 
@@ -152,7 +178,7 @@ export function MessageInput({
       )}
 
       {/* Input Form */}
-      <form onSubmit={handleSubmit} className="flex items-end space-x-3">
+      <form onSubmit={handleSubmitWithTyping} className="flex items-end space-x-3">
         <div className="flex-1 relative">
           <textarea
             id="chat-message-input"
@@ -161,6 +187,7 @@ export function MessageInput({
             value={input}
             onChange={handleInputChangeWithMentions}
             onKeyDown={handleKeyDown}
+            onBlur={handleBlur}
             placeholder="Type your message... Use @advisor to mention specific advisors"
             disabled={isLoading}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] max-h-32"
@@ -170,7 +197,7 @@ export function MessageInput({
           />
           
           {/* Character count */}
-          <div className="absolute bottom-1 right-2 text-xs text-gray-400">
+          <div className="absolute top-1 right-2 text-xs text-gray-500">
             {input.length}/4000
           </div>
         </div>

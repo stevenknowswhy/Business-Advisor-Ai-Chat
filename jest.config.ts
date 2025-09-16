@@ -2,10 +2,11 @@ import type { Config } from 'jest';
 
 const config: Config = {
   preset: 'ts-jest',
-  testEnvironment: 'node',
-  testMatch: ['**/tests/**/*.spec.ts'],
+  testEnvironment: 'jsdom',
+  testMatch: ['**/tests/**/*.spec.ts', '**/tests/**/*.spec.tsx'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^~/(.*)$': '<rootDir>/src/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/tests/jest.setup.ts'],
   globals: {
@@ -13,6 +14,7 @@ const config: Config = {
       isolatedModules: true,
       tsconfig: {
         esModuleInterop: true,
+        jsx: 'react-jsx',
         module: 'commonjs',
         target: 'ES2020',
         moduleResolution: 'node',

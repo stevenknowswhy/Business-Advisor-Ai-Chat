@@ -5,6 +5,7 @@ import { Geist } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 
 import { TRPCReactProvider } from "~/trpc/react";
+import { ConvexClientProvider } from "~/providers/ConvexProvider";
 
 export const metadata: Metadata = {
   title: "AI Advisor Chat",
@@ -24,7 +25,9 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" className={`${geist.variable}`}>
         <body>
-          <TRPCReactProvider>{children}</TRPCReactProvider>
+          <ConvexClientProvider>
+            <TRPCReactProvider>{children}</TRPCReactProvider>
+          </ConvexClientProvider>
         </body>
       </html>
     </ClerkProvider>

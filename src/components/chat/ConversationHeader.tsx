@@ -4,7 +4,8 @@ import { useState } from "react";
 import { PencilIcon, InformationCircleIcon, CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { getAdvisorInitials, getAdvisorColor, type Advisor, type Conversation } from "~/lib/chat";
 import { AuthHeader } from "~/components/auth/AuthHeader";
-import { ConversationsAPI } from "~/lib/api";
+import { useUpdateConversation } from "~/lib/convex-api";
+import type { Id } from "../../../convex/_generated/dataModel";
 
 interface ConversationHeaderProps {
   conversation: Conversation | null;
@@ -19,6 +20,9 @@ export function ConversationHeader({ conversation, activeAdvisor, advisorSwitche
   const [editTitle, setEditTitle] = useState("");
   const [isSavingTitle, setIsSavingTitle] = useState(false);
 
+  // Convex hook for updating conversations
+  const updateConversation = useUpdateConversation();
+
   const handleStartEditTitle = () => {
     setEditTitle(conversation?.title || "");
     setIsEditingTitle(true);
@@ -29,7 +33,10 @@ export function ConversationHeader({ conversation, activeAdvisor, advisorSwitche
 
     setIsSavingTitle(true);
     try {
-      await ConversationsAPI.update(conversation.id, { title: editTitle.trim() });
+      await updateConversation({
+        conversationId: conversation.id as Id<"conversations">,
+        title: editTitle.trim()
+      });
       onTitleUpdate?.(conversation.id, editTitle.trim());
       setIsEditingTitle(false);
     } catch (error) {

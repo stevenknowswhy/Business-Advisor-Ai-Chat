@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useUser, type User } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 // Use the correct type from useChat hook
 type Message = {
   id: string;
@@ -13,15 +13,23 @@ import { TypingIndicator } from "./TypingIndicator";
 import { FeedbackControls, type FeedbackPayload } from "./Feedback";
 import { MessageActions } from "./MessageActions";
 
+interface TypingUser {
+  _id: string;
+  name: string | null | undefined;
+  image: string | null | undefined;
+  lastTypingAt: number;
+}
+
 interface MessageListProps {
   messages: any[];
   advisors: Advisor[];
   isLoading: boolean;
+  typingUsers?: TypingUser[];
   onEditMessage?: (messageId: string, newContent: string) => Promise<void>;
   onDeleteMessage?: (messageId: string) => Promise<void>;
 }
 
-export function MessageList({ messages, advisors, isLoading, onEditMessage, onDeleteMessage }: MessageListProps) {
+export function MessageList({ messages, advisors, isLoading, typingUsers = [], onEditMessage, onDeleteMessage }: MessageListProps) {
   const { user } = useUser();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -90,7 +98,8 @@ export function MessageList({ messages, advisors, isLoading, onEditMessage, onDe
           );
         })}
         
-        {isLoading && <TypingIndicator />}
+        {isLoading && <TypingIndicator isAIThinking={true} />}
+        {typingUsers.length > 0 && <TypingIndicator typingUsers={typingUsers} />}
         
         <div ref={messagesEndRef} />
       </div>
@@ -108,7 +117,7 @@ function MessageBubble({
 }: {
   message: Message;
   advisors: Advisor[];
-  user: User | null | undefined; // Clerk user object with proper typing
+  user: any; // Clerk user object
   onEditMessage?: (messageId: string, newContent: string) => Promise<void>;
   onDeleteMessage?: (messageId: string) => Promise<void>;
   isLoading?: boolean;
@@ -168,7 +177,7 @@ function MessageBubble({
             className={`px-4 py-2 rounded-2xl ${
               isUser
                 ? "bg-blue-600 text-white"
-                : "bg-white border border-gray-200 text-gray-900"
+                : "bg-gray-50 border border-gray-300 text-gray-900"
             }`}
           >
             {/* Ensure readable text on dark (user) bubble by inverting prose colors */}
@@ -211,8 +220,11 @@ function MessageBubble({
 function MessageContent({ content, isUser = false }: { content: string; isUser?: boolean }) {
   // Handle @mentions highlighting
   const highlightMentions = (text: string) => {
-    const mentionColor = isUser ? 'text-blue-200' : 'text-blue-600';
-    return text.replace(/@(\w+(?:\s+\w+)*)/g, `<span class="font-semibold ${mentionColor}">@$1</span>`);
+    // Tag-like pill styles for @mentions; ensure readable styles on both bubbles
+    const pillClasses = isUser
+      ? 'inline-flex items-center rounded-md bg-white/20 text-white px-1.5 py-0.5 font-semibold'
+      : 'inline-flex items-center rounded-md bg-blue-100 text-blue-800 px-1.5 py-0.5 font-medium';
+    return text.replace(/@([A-Za-z][\w]*(?:\s+[A-Za-z][\w]*)*)/g, `<span class="${pillClasses}">@$1</span>`);
   };
 
   // Simple markdown-like formatting

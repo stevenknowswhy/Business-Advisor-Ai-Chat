@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { DELETE as deleteConversationHandler } from '@/app/api/conversations/[id]/route';
+import { NextRequest } from 'next/server';
 
 const db = new PrismaClient();
 
@@ -75,7 +76,7 @@ async function createConversationGraph(userId: string) {
 }
 
 function makeReq(url: string, method = 'DELETE') {
-  return new Request(url, { method });
+  return new NextRequest(url, { method });
 }
 
 describe('Conversation deletion API', () => {

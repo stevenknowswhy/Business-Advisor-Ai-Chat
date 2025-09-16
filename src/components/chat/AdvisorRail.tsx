@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { PlusIcon, ChatBubbleLeftIcon, UserGroupIcon, InformationCircleIcon, TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { getAdvisorInitials, getAdvisorColor, formatMessageTime, type Advisor, type Conversation } from "~/lib/chat";
 import { AdvisorProfileModal } from "./AdvisorProfileModal";
 import { DeleteConversationDialog } from "./DeleteConversationDialog";
 import { AdvisorModal, type AdvisorFormData } from "./AdvisorModal";
+import { useUploadAdvisorJSON } from "~/lib/convex-api";
 
 interface AdvisorRailProps {
   advisors: Advisor[];
@@ -128,6 +129,7 @@ export function AdvisorRail({
       {/* Tab Navigation */}
       <div className="flex border-b border-gray-200">
         <button
+          type="button"
           onClick={() => setActiveTab("advisors")}
           className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
             activeTab === "advisors"
@@ -139,6 +141,7 @@ export function AdvisorRail({
           Advisors
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab("conversations")}
           className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
             activeTab === "conversations"
@@ -216,7 +219,56 @@ function AdvisorsList({
   onShowProfile: (advisor: Advisor) => void;
   onCreateAdvisor: () => void;
   onEditAdvisor: (advisor: Advisor) => void;
+
+
+
 }) {
+  const uploadAdvisorJSON = useUploadAdvisorJSON();
+  const [isBusy, setIsBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleUploadClick = () => fileInputRef.current?.click();
+
+  const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsBusy(true);
+      const text = await file.text();
+      const res = await uploadAdvisorJSON({ jsonString: text });
+      if ((res as any)?.ok) {
+        window.alert("Advisor uploaded successfully.");
+      } else {
+        window.alert(`Upload failed: ${(res as any)?.error ?? "Unknown error"}`);
+      }
+    } catch (err: any) {
+      console.error(err);
+      window.alert(`Upload error: ${err?.message ?? String(err)}`);
+    } finally {
+      setIsBusy(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleEnrichClick = async () => {
+    const json = window.prompt("Paste advisor JSON to upsert/enrich by persona.name:");
+    if (!json) return;
+    try {
+      setIsBusy(true);
+      const res = await uploadAdvisorJSON({ jsonString: json });
+      if ((res as any)?.ok) {
+        window.alert("Advisor enriched successfully.");
+      } else {
+        window.alert(`Enrich failed: ${(res as any)?.error ?? "Unknown error"}`);
+      }
+    } catch (err: any) {
+      console.error(err);
+      window.alert(`Enrich error: ${err?.message ?? String(err)}`);
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
   return (
     <div className="p-2">
       {/* Add New Advisor Button */}
@@ -228,14 +280,49 @@ function AdvisorsList({
         <PlusIcon className="w-4 h-4" />
         <span className="text-sm font-medium">Add New Advisor</span>
       </button>
+
+      {/* JSON Utilities */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json"
+        className="hidden"
+        onChange={handleFileChange}
+        aria-label="Upload advisor JSON file"
+        title="Upload advisor JSON file"
+      />
+      <div className="grid grid-cols-2 gap-2 mb-3" role="group" aria-label="Advisor JSON utilities">
+        <button
+          type="button"
+          onClick={handleUploadClick}
+          disabled={isBusy}
+          className="w-full p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 disabled:opacity-60"
+          title="Upload a JSON file describing an advisor to create or update by name"
+        >
+          <span className="text-xs font-medium">Upload Advisor JSON</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleEnrichClick}
+          disabled={isBusy}
+          className="w-full p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 disabled:opacity-60"
+          title="Paste advisor JSON to enrich existing advisor by persona.name"
+        >
+          <span className="text-xs font-medium">Enrich from JSON</span>
+        </button>
+      </div>
+
       {advisors.map((advisor) => (
         <div key={advisor.id} className="relative mb-2">
           <button
+            type="button"
+
+            aria-label={`Select advisor ${advisor.name}`}
             onClick={() => onAdvisorSelect(advisor.id)}
-            className={`w-full p-3 rounded-lg text-left transition-colors ${
+            className={`w-full p-3 rounded-lg text-left transition-colors group focus:outline-none focus:ring-2 focus:ring-blue-400/60 ${
               activeAdvisorId === advisor.id
-                ? "bg-blue-100 border-2 border-blue-300"
-                : "bg-white border border-gray-200 hover:bg-gray-50"
+                ? "bg-blue-50 border-2 border-blue-300"
+                : "bg-white border border-gray-200 hover:bg-gray-50 hover:shadow-sm"
             }`}
           >
             <div className="flex items-start space-x-3">
@@ -322,6 +409,7 @@ function ConversationsList({
     <div className="p-2">
       {/* New Conversation Button */}
       <button
+        type="button"
         onClick={onNewConversation}
         className="w-full p-3 rounded-lg mb-3 bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
       >
@@ -340,8 +428,9 @@ function ConversationsList({
         conversations.map((conversation) => (
           <div key={conversation.id} className="relative mb-2 group">
             <button
+              type="button"
               onClick={() => onConversationSelect(conversation.id)}
-              className={`w-full p-3 rounded-lg text-left transition-colors ${
+              className={`w-full p-3 rounded-lg text-left transition-colors relative ${
                 currentConversationId === conversation.id
                   ? "bg-blue-100 border-2 border-blue-300"
                   : "bg-white border border-gray-200 hover:bg-gray-50"
@@ -376,9 +465,15 @@ function ConversationsList({
               </div>
             </button>
 
+            {/* Unread indicator */}
+            {currentConversationId !== conversation.id && (((conversation as any).unreadCount ?? 0) > 0 || ((conversation as any).unreadCount === undefined && (conversation.messageCount ?? 0) > 0)) && (
+              <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-blue-500" aria-label="Unread messages" />
+            )}
+
             {/* Delete Button */}
             {onDeleteConversation && (
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDeleteConversation(conversation);

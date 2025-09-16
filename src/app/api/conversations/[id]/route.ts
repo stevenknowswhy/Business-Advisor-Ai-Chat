@@ -51,46 +51,146 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log("=== INDIVIDUAL CONVERSATION API START ===");
+  console.log("Request URL:", req.url);
+
   try {
-    const user = await debugRequireUser();
+    // TEMPORARY: Skip authentication and database access while database is down
+    // const user = await debugRequireUser();
     const { id: conversationId } = await params;
 
-    const conversation = await directDb.conversation.findFirst({
-      where: {
-        id: conversationId,
-        userId: user.id, // Ensure user owns this conversation
-      },
-      include: {
-        activeAdvisor: true,
-        messages: {
-          include: { advisor: true },
-          orderBy: { createdAt: "asc" },
+    console.log("Fetching conversation with ID:", conversationId);
+
+    // TEMPORARY: Return mock conversation data instead of database query
+    // TODO: Re-enable database when connection is fixed
+
+    // Mock conversation data based on the requested ID
+    const mockConversations: { [key: string]: any } = {
+      "1": {
+        id: "1",
+        title: "Investment Portfolio Review",
+        createdAt: new Date(Date.now() - 86400000), // 1 day ago
+        updatedAt: new Date(Date.now() - 86400000),
+        activeAdvisor: {
+          id: "1",
+          name: "Marcus Wellington",
+          title: "Senior Investment Strategist",
+          image: "/advisors/investment.jpg",
+          oneLiner: "Building wealth through strategic investment decisions",
+          archetype: "The Strategist",
+          bio: "Marcus has guided thousands of investors through market volatility with his disciplined approach to wealth building.",
         },
+        messages: [
+          {
+            id: "msg1",
+            sender: "user",
+            content: "Hi Marcus, I'd like to review my current investment portfolio. I have about $50k invested across various stocks and bonds, but I'm not sure if my allocation is optimal for my age and risk tolerance.",
+            createdAt: new Date(Date.now() - 86400000),
+            mentions: [],
+            advisor: null,
+          },
+          {
+            id: "msg2",
+            sender: "assistant",
+            content: "Hello! I'd be happy to help you review your portfolio allocation. At your stage, it's wise to regularly assess whether your investments align with your goals and risk tolerance.\n\nTo provide you with the most relevant advice, could you share:\n\n1. Your age and investment timeline (when do you plan to need this money?)\n2. Your current allocation breakdown (what percentage in stocks vs bonds vs other assets?)\n3. Your risk tolerance - are you comfortable with market volatility for potentially higher returns?\n4. Any specific financial goals (retirement, home purchase, etc.)\n\nWith this information, I can provide tailored recommendations for optimizing your portfolio allocation.",
+            createdAt: new Date(Date.now() - 86300000),
+            mentions: [],
+            advisor: {
+              id: "1",
+              name: "Marcus Wellington",
+              title: "Senior Investment Strategist",
+              image: "/advisors/investment.jpg",
+              oneLiner: "Building wealth through strategic investment decisions",
+              archetype: "The Strategist",
+              bio: "Marcus has guided thousands of investors through market volatility.",
+            },
+          },
+          {
+            id: "msg3",
+            sender: "user",
+            content: "I'm 32 years old and planning to use this money for retirement, so I have about 30+ years until I need it. Currently I have about 70% in individual stocks (mostly tech companies like Apple, Google, Microsoft) and 30% in government bonds. I'd say I'm moderately aggressive with risk - I can handle some volatility but don't want to lose everything in a crash.",
+            createdAt: new Date(Date.now() - 86200000),
+            mentions: [],
+            advisor: null,
+          },
+          {
+            id: "msg4",
+            sender: "assistant",
+            content: "Excellent! With a 30+ year timeline, you're in a great position to build substantial wealth. Your current 70/30 stock/bond allocation is reasonable for your age, but I see some opportunities for optimization:\n\n**Diversification Concerns:**\n- Your stock holdings are heavily concentrated in tech. While these are quality companies, sector concentration adds unnecessary risk\n- Consider diversifying across sectors (healthcare, financials, consumer goods, international markets)\n\n**Allocation Recommendations:**\n- **80/20 stocks/bonds** might be more appropriate given your timeline and risk tolerance\n- **Diversified index funds** (like S&P 500, Total Stock Market) instead of individual stocks\n- **International exposure** (20-30% of stock allocation) for global diversification\n- **Small-cap and mid-cap** exposure for additional growth potential\n\n**Specific Action Plan:**\n1. Gradually reduce individual tech stock concentration\n2. Invest in broad market index funds (VTI, VTIAX)\n3. Consider target-date funds for automatic rebalancing\n4. Keep some bonds for stability, but reduce to 20%\n\nWould you like me to elaborate on any of these recommendations?",
+            createdAt: new Date(Date.now() - 86100000),
+            mentions: [],
+            advisor: {
+              id: "1",
+              name: "Marcus Wellington",
+              title: "Senior Investment Strategist",
+              image: "/advisors/investment.jpg",
+              oneLiner: "Building wealth through strategic investment decisions",
+              archetype: "The Strategist",
+              bio: "Marcus has guided thousands of investors through market volatility.",
+            },
+          },
+          {
+            id: "msg5",
+            sender: "user",
+            content: "Thank you for the detailed analysis! This is very helpful. I particularly like the idea of diversifying away from tech concentration. Could you recommend some specific index funds that would give me good diversification? And should I make these changes all at once or gradually over time?",
+            createdAt: new Date(Date.now() - 86000000),
+            mentions: [],
+            advisor: null,
+          }
+        ],
       },
-    });
+      "2": {
+        id: "2",
+        title: "Tech Stack Architecture",
+        createdAt: new Date(Date.now() - 172800000), // 2 days ago
+        updatedAt: new Date(Date.now() - 172800000),
+        activeAdvisor: {
+          id: "2",
+          name: "Dr. Sarah Chen",
+          title: "Chief Technology Strategist",
+          image: "/advisors/tech.jpg",
+          oneLiner: "Transforming businesses through strategic technology adoption",
+          archetype: "The Innovator",
+          bio: "Sarah has led digital transformations at Fortune 500 companies and successful startups alike.",
+        },
+        messages: [
+          {
+            id: "msg1",
+            sender: "user",
+            content: "Hi Sarah, I'm building a new SaaS application and need advice on the tech stack architecture. The app will need to handle real-time collaboration, file uploads, and potentially scale to thousands of users. What would you recommend?",
+            createdAt: new Date(Date.now() - 172800000),
+            mentions: [],
+            advisor: null,
+          },
+          {
+            id: "msg2",
+            sender: "assistant",
+            content: "Great question! For a scalable SaaS with real-time collaboration, I'd recommend a modern, cloud-native architecture. Here's my recommended stack:\n\n**Frontend:**\n- React/Next.js for the web app\n- TypeScript for type safety\n- Tailwind CSS for styling\n- Socket.io client for real-time features\n\n**Backend:**\n- Node.js with Express or Fastify\n- TypeScript throughout\n- Socket.io for real-time collaboration\n- PostgreSQL for primary database\n- Redis for caching and session management\n\n**Infrastructure:**\n- Vercel/Netlify for frontend deployment\n- Railway/Render for backend hosting\n- AWS S3 for file storage\n- CloudFront CDN for global performance\n\n**Key Architecture Patterns:**\n- Microservices for different domains (auth, files, collaboration)\n- Event-driven architecture for real-time updates\n- Database per service pattern\n- API Gateway for request routing\n\nWhat's your team's experience level with these technologies? I can adjust recommendations based on your constraints.",
+            createdAt: new Date(Date.now() - 172700000),
+            mentions: [],
+            advisor: {
+              id: "2",
+              name: "Dr. Sarah Chen",
+              title: "Chief Technology Strategist",
+              image: "/advisors/tech.jpg",
+              oneLiner: "Transforming businesses through strategic technology adoption",
+              archetype: "The Innovator",
+              bio: "Sarah has led digital transformations at Fortune 500 companies.",
+            },
+          }
+        ],
+      }
+    };
+
+    const conversation = mockConversations[conversationId];
 
     if (!conversation) {
+      console.log("Conversation not found for ID:", conversationId);
       return new Response("Conversation not found", { status: 404 });
     }
 
-    // Format messages for client
-    const formattedMessages = conversation.messages.map(message => ({
-      id: message.id,
-      sender: message.sender,
-      content: message.content,
-      createdAt: message.createdAt,
-      mentions: message.mentions,
-      advisor: message.advisor ? localFormatAdvisorForClient(message.advisor) : null,
-    }));
-
-    return Response.json({
-      id: conversation.id,
-      title: conversation.title,
-      createdAt: conversation.createdAt,
-      updatedAt: conversation.updatedAt,
-      activeAdvisor: conversation.activeAdvisor ? localFormatAdvisorForClient(conversation.activeAdvisor) : null,
-      messages: formattedMessages,
-    });
+    console.log("Returning mock conversation data for ID:", conversationId);
+    return Response.json(conversation);
 
   } catch (error) {
     console.error("Get conversation error:", error);

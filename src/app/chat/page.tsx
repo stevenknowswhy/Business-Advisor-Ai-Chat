@@ -1,9 +1,13 @@
-import { ChatInterface } from "~/components/chat/ChatInterface";
+import { ConvexChatInterface } from "~/components/chat/ConvexChatInterface";
+import { ErrorBoundary } from "~/components/common/ErrorBoundary";
+// Updated to fix blank screen issue
 
 export default function ChatPage() {
   return (
     <div className="h-screen bg-gray-50">
-      <ChatInterface />
+      <ErrorBoundary>
+        <ConvexChatInterface />
+      </ErrorBoundary>
     </div>
   );
 }

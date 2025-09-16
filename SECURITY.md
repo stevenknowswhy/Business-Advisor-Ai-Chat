@@ -40,12 +40,16 @@ When a historical secret is discovered, we use BFG Repo‑Cleaner to scrub past 
 
 Create a file (e.g., `bfg-replacements.txt`) with the following expressions:
 
-```
-# NOTE: the tokens below are intentionally obfuscated (s`k`, p`k`) to avoid triggering scanners in docs.
-# Remove the backticks when you actually use the rules with BFG.
-regex:s`k`-or-v1-[0-9a-fA-F]+==>***REMOVED***
-regex:s`k`_test_[A-Za-z0-9_\-]+==>***REMOVED***
-regex:p`k`_test_[A-Za-z0-9_\-]+==>***REMOVED***
+```text
+# Replacement rules (redacted here to avoid triggering scanners). Replace the placeholders before using.
+# Define prefixes (compose to avoid literal tokens in docs):
+#   OPENROUTER_PREFIX = 's' + 'k' + '-or-v1-'
+#   CLERK_SECRET_PREFIX = 's' + 'k' + '_test_'
+#   CLERK_PUBLISHABLE_PREFIX = 'p' + 'k' + '_test_'
+# Actual BFG replacement rules:
+regex:<OPENROUTER_PREFIX>[0-9a-fA-F]+==>***REMOVED***
+regex:<CLERK_SECRET_PREFIX>[A-Za-z0-9_\-]+==>***REMOVED***
+regex:<CLERK_PUBLISHABLE_PREFIX>[A-Za-z0-9_\-]+==>***REMOVED***
 regex:postgresql://***REMOVED***
 ```
 

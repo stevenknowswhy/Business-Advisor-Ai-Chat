@@ -6,6 +6,8 @@ import { getAdvisorInitials, getAdvisorColor, formatMessageTime, type Advisor, t
 import { AdvisorProfileModal } from "./AdvisorProfileModal";
 import { DeleteConversationDialog } from "./DeleteConversationDialog";
 import { AdvisorModal, type AdvisorFormData } from "./AdvisorModal";
+import { Tooltip } from "~/components/ui/Tooltip";
+import { AdvisorTooltipContent, ConversationTooltipContent } from "~/components/ui/TooltipContent";
 
 interface AdvisorRailProps {
   advisors: Advisor[];
@@ -163,21 +165,26 @@ export function AdvisorRail({
             {activeTab === "advisors" ? (
               <div className="space-y-2">
                 {advisors.map((advisor) => (
-                  <button
+                  <Tooltip
                     key={advisor.id}
-                    type="button"
-                    onClick={() => onAdvisorSelect(advisor.id)}
-                    className={`w-full p-2 rounded-lg transition-colors ${
-                      activeAdvisorId === advisor.id
-                        ? "bg-blue-100 text-blue-700"
-                        : "text-gray-600 hover:bg-gray-100"
-                    }`}
-                    title={advisor.name}
+                    content={<AdvisorTooltipContent advisor={advisor} />}
+                    delay={500}
                   >
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium mx-auto ${getAdvisorColor(advisor.id)}`}>
-                      {getAdvisorInitials(advisor.name)}
-                    </div>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => onAdvisorSelect(advisor.id)}
+                      className={`w-full p-2 rounded-lg transition-colors ${
+                        activeAdvisorId === advisor.id
+                          ? "bg-blue-100 text-blue-700"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                      aria-label={`Select advisor: ${advisor.name}`}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium mx-auto ${getAdvisorColor(advisor.id)}`}>
+                        {getAdvisorInitials(advisor.name)}
+                      </div>
+                    </button>
+                  </Tooltip>
                 ))}
               </div>
             ) : (
@@ -191,19 +198,24 @@ export function AdvisorRail({
                   <PlusIcon className="w-5 h-5 mx-auto" />
                 </button>
                 {conversations.slice(0, 5).map((conversation) => (
-                  <button
+                  <Tooltip
                     key={conversation.id}
-                    type="button"
-                    onClick={() => onConversationSelect(conversation.id)}
-                    className={`w-full p-2 rounded-lg transition-colors ${
-                      currentConversationId === conversation.id
-                        ? "bg-blue-100 text-blue-700"
-                        : "text-gray-600 hover:bg-gray-100"
-                    }`}
-                    title={conversation.title}
+                    content={<ConversationTooltipContent conversation={conversation} advisors={advisors} />}
+                    delay={500}
                   >
-                    <ChatBubbleLeftIcon className="w-5 h-5 mx-auto" />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => onConversationSelect(conversation.id)}
+                      className={`w-full p-2 rounded-lg transition-colors ${
+                        currentConversationId === conversation.id
+                          ? "bg-blue-100 text-blue-700"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                      aria-label={`Select conversation: ${conversation.title}`}
+                    >
+                      <ChatBubbleLeftIcon className="w-5 h-5 mx-auto" />
+                    </button>
+                  </Tooltip>
                 ))}
               </div>
             )}

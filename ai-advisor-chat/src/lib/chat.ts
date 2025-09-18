@@ -44,6 +44,7 @@ export interface Conversation {
   createdAt: Date;
   updatedAt: Date;
   activeAdvisor?: Advisor;
+  activeAdvisorId?: string;
   messages: Message[];
   messageCount?: number;
   lastMessage?: {

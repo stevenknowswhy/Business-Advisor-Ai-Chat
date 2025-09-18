@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
       console.log("Step 3a: Available advisors count:", availableAdvisors.length);
 
       // Extract mentions from message
-      mentions = extractMentions(message, availableAdvisors);
+      mentions = extractMentions(message, availableAdvisors as any);
       console.log("Step 3b: Mentions extracted:", mentions);
     } catch (advisorError: any) {
       console.error("Step 3 FAILED: Advisor processing error:", advisorError.message);
@@ -213,7 +213,7 @@ export async function POST(req: NextRequest) {
       console.log("Step 5a: Updating active advisor from", conversation.activeAdvisorId, "to", activeAdvisor._id);
       await updateActiveAdvisorIfChanged({
         conversationId: conversation._id,
-        currentActiveAdvisorId: conversation.activeAdvisorId,
+        currentActiveAdvisorId: conversation.activeAdvisorId || "",
         newActiveAdvisorId: activeAdvisor._id,
       });
     }
@@ -229,10 +229,10 @@ export async function POST(req: NextRequest) {
 
     console.log("Step 6: Generating prompts and preparing AI messages...");
     // Generate system prompt and context
-    const systemPrompt = generateSystemPrompt(activeAdvisor);
+    const systemPrompt = generateSystemPrompt(activeAdvisor as any);
     console.log("Step 6a: System prompt generated, length:", systemPrompt.length);
 
-    const conversationContext = generateConversationContext(conversation.messages);
+    const conversationContext = generateConversationContext(conversation.messages as any);
     console.log("Step 6b: Conversation context generated, length:", conversationContext?.length || 0);
 
     const userMessageWithContext = generateUserMessage(message, mentions);

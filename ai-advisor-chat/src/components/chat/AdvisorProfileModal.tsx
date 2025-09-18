@@ -60,10 +60,15 @@ export function AdvisorProfileModal({ advisor, isOpen, onClose }: AdvisorProfile
                         {advisor.name}
                       </Dialog.Title>
                       <p className="text-lg text-gray-600 mb-2">{advisor.title}</p>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <MapPinIcon className="w-4 h-4 mr-1" />
-                        {advisor.location.city}, {advisor.location.region}
-                      </div>
+                      {advisor.location && (advisor.location.city || advisor.location.region) && (
+                        <div className="flex items-center text-sm text-gray-500">
+                          <MapPinIcon className="w-4 h-4 mr-1" />
+                          {advisor.location.city && advisor.location.region
+                            ? `${advisor.location.city}, ${advisor.location.region}`
+                            : advisor.location.city || advisor.location.region || "Remote"
+                          }
+                        </div>
+                      )}
                     </div>
                   </div>
                   <button

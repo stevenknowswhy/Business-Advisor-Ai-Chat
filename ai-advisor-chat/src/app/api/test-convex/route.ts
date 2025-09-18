@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../convex/_generated/api";
 
 export async function GET(req: NextRequest) {
   console.log("=== TEST CONVEX API START ===");
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
     const convex = new ConvexHttpClient(convexUrl);
     
     // Test query
-    const advisors = await convex.query("advisors:getActiveAdvisors");
+    const advisors = await convex.query(api.advisors.getActiveAdvisors);
     
     console.log("Retrieved advisors:", advisors.length);
     

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useUser, type User } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 // Use the correct type from useChat hook
 type Message = {
   id: string;
@@ -108,7 +108,7 @@ function MessageBubble({
 }: {
   message: Message;
   advisors: Advisor[];
-  user: User | null | undefined; // Clerk user object with proper typing
+  user: any; // Clerk user object
   onEditMessage?: (messageId: string, newContent: string) => Promise<void>;
   onDeleteMessage?: (messageId: string) => Promise<void>;
   isLoading?: boolean;

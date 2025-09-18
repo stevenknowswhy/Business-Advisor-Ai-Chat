@@ -1,0 +1,12 @@
+{
+  "name": "ai-advisor-convex-functions",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "convex deploy ./functions"
+  },
+  "dependencies": {
+    "convex": "^1.27.0"
+  }
+}

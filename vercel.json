@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "ai-advisor-chat/package.json",
+      "use": "@vercel/next",
+      "config": {
+        "distDir": ".next"
+      }
+    },
+    {
+      "src": "ai-advisor-monorepo/apps/marketing/package.json",
+      "use": "@vercel/next",
+      "config": {
+        "distDir": ".next"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/marketing/(.*)",
+      "dest": "/ai-advisor-monorepo/apps/marketing/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/ai-advisor-chat/$1"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "ai-advisor-chat/src/app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  }
+}

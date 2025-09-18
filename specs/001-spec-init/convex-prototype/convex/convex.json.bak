@@ -1,0 +1,5 @@
+{
+  "project": "striped-gnat-509",
+  "deploymentUrl": "https://striped-gnat-509.convex.cloud",
+  "functions": "./functions"
+}

@@ -1,4 +1,5 @@
 import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../convex/_generated/api";
 
 // Initialize Convex client for server-side use
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
@@ -17,7 +18,7 @@ export const convex = new ConvexHttpClient(convexUrl);
  * Get all active advisors
  */
 export async function getActiveAdvisors() {
-  return await convex.query("advisors:getActiveAdvisors");
+  return await convex.query(api.advisors.getActiveAdvisors);
 }
 
 /**
@@ -25,7 +26,7 @@ export async function getActiveAdvisors() {
  */
 export async function getAdvisorById(advisorId: string) {
   try {
-    return await convex.query("advisors:getAdvisorById", { advisorId: advisorId as any });
+    return await convex.query(api.advisors.getAdvisorById, { advisorId: advisorId as any });
   } catch (error) {
     console.error("Error getting advisor by ID:", error);
     return null;
@@ -36,21 +37,21 @@ export async function getAdvisorById(advisorId: string) {
  * Create a new advisor
  */
 export async function createAdvisor(advisorData: any) {
-  return await convex.mutation("advisors:createAdvisor", advisorData);
+  return await convex.mutation(api.advisors.createAdvisor, advisorData);
 }
 
 /**
  * Get user conversations (temporary migration version)
  */
 export async function getUserConversations() {
-  return await convex.query("conversations:getAllConversationsForMigration");
+  return await convex.query(api.conversations.getAllConversationsForMigration);
 }
 
 /**
  * Get conversation by ID (temporary migration version)
  */
 export async function getConversationById(conversationId: string) {
-  return await convex.query("conversations:getConversationByIdForMigration", {
+  return await convex.query(api.conversations.getConversationByIdForMigration, {
     conversationId: conversationId as any
   });
 }
@@ -62,7 +63,7 @@ export async function createConversation(data: {
   title?: string;
   activeAdvisorId?: string;
 }) {
-  return await convex.mutation("conversations:createConversationForMigration", {
+  return await convex.mutation(api.conversations.createConversationForMigration, {
     title: data.title,
     activeAdvisorId: data.activeAdvisorId as any
   });
@@ -76,7 +77,7 @@ export async function updateConversation(data: {
   title?: string;
   activeAdvisorId?: string;
 }) {
-  return await convex.mutation("conversations:updateConversationForMigration", {
+  return await convex.mutation(api.conversations.updateConversationForMigration, {
     conversationId: data.conversationId as any,
     title: data.title,
     activeAdvisorId: data.activeAdvisorId as any
@@ -87,7 +88,7 @@ export async function updateConversation(data: {
  * Delete a conversation (temporary migration version)
  */
 export async function deleteConversation(conversationId: string) {
-  return await convex.mutation("conversations:deleteConversationForMigration", {
+  return await convex.mutation(api.conversations.deleteConversationForMigration, {
     conversationId: conversationId as any
   });
 }
@@ -96,7 +97,7 @@ export async function deleteConversation(conversationId: string) {
  * Get message by ID (temporary migration version)
  */
 export async function getMessageById(messageId: string) {
-  return await convex.query("messages:getMessageByIdForMigration", {
+  return await convex.query(api.messages.getMessageByIdForMigration, {
     messageId: messageId as any
   });
 }
@@ -110,7 +111,7 @@ export async function updateMessage(data: {
   contentJson?: any;
   mentions?: string[];
 }) {
-  return await convex.mutation("messages:updateMessageForMigration", {
+  return await convex.mutation(api.messages.updateMessageForMigration, {
     messageId: data.messageId as any,
     content: data.content,
     contentJson: data.contentJson,
@@ -122,7 +123,7 @@ export async function updateMessage(data: {
  * Delete a message (temporary migration version)
  */
 export async function deleteMessage(messageId: string) {
-  return await convex.mutation("messages:deleteMessageForMigration", {
+  return await convex.mutation(api.messages.deleteMessageForMigration, {
     messageId: messageId as any
   });
 }
@@ -135,7 +136,7 @@ export async function getConversationWithMessages(data: {
   userId: string;
   messageLimit?: number;
 }) {
-  return await convex.query("conversations:getConversationWithMessagesForMigration", {
+  return await convex.query(api.conversations.getConversationWithMessagesForMigration, {
     conversationId: data.conversationId as any,
     userId: data.userId,
     messageLimit: data.messageLimit
@@ -150,7 +151,7 @@ export async function createConversationForChat(data: {
   activeAdvisorId: string;
   title: string;
 }) {
-  return await convex.mutation("conversations:createConversationForChat", {
+  return await convex.mutation(api.conversations.createConversationForChat, {
     userId: data.userId,
     activeAdvisorId: data.activeAdvisorId as any,
     title: data.title
@@ -164,7 +165,7 @@ export async function updateConversationActiveAdvisor(data: {
   conversationId: string;
   activeAdvisorId: string;
 }) {
-  return await convex.mutation("conversations:updateConversationActiveAdvisorForMigration", {
+  return await convex.mutation(api.conversations.updateConversationActiveAdvisorForMigration, {
     conversationId: data.conversationId as any,
     activeAdvisorId: data.activeAdvisorId as any
   });
@@ -178,7 +179,7 @@ export async function createUserMessage(data: {
   content: string;
   mentions: string[];
 }) {
-  return await convex.mutation("messages:createUserMessageForMigration", {
+  return await convex.mutation(api.messages.createUserMessageForMigration, {
     conversationId: data.conversationId as any,
     content: data.content,
     mentions: data.mentions
@@ -195,7 +196,7 @@ export async function createAdvisorMessage(data: {
   tokensUsed?: number;
   contentJson?: any;
 }) {
-  return await convex.mutation("messages:createAdvisorMessageForMigration", {
+  return await convex.mutation(api.messages.createAdvisorMessageForMigration, {
     conversationId: data.conversationId as any,
     advisorId: data.advisorId as any,
     content: data.content,
@@ -208,7 +209,7 @@ export async function createAdvisorMessage(data: {
  * Get message count for conversation (temporary migration version)
  */
 export async function getMessageCount(conversationId: string) {
-  return await convex.query("messages:getMessageCountForMigration", {
+  return await convex.query(api.messages.getMessageCountForMigration, {
     conversationId: conversationId as any
   });
 }
@@ -220,7 +221,7 @@ export async function getConversationHistory(data: {
   conversationId: string;
   limit?: number;
 }) {
-  return await convex.query("messages:getConversationHistoryForMigration", {
+  return await convex.query(api.messages.getConversationHistoryForMigration, {
     conversationId: data.conversationId as any,
     limit: data.limit
   });
@@ -233,7 +234,7 @@ export async function updateConversationTitle(data: {
   conversationId: string;
   title: string;
 }) {
-  return await convex.mutation("conversations:updateConversationTitleForMigration", {
+  return await convex.mutation(api.conversations.updateConversationTitleForMigration, {
     conversationId: data.conversationId as any,
     title: data.title
   });
@@ -243,7 +244,7 @@ export async function updateConversationTitle(data: {
  * Get conversation messages
  */
 export async function getConversationMessages(conversationId: string) {
-  return await convex.query("messages:getConversationMessages", { conversationId });
+  return await convex.query(api.messages.getConversationMessages, { conversationId });
 }
 
 /**
@@ -256,7 +257,7 @@ export async function sendMessage(data: {
   advisorId?: string;
   mentions?: string[];
 }) {
-  return await convex.mutation("messages:sendMessage", data);
+  return await convex.mutation(api.messages.sendMessage, data);
 }
 
 /**
@@ -268,5 +269,5 @@ export async function getOrCreateUser(userData: {
   name?: string;
   image?: string;
 }) {
-  return await convex.mutation("auth:getOrEnsureUser", userData);
+  return await convex.mutation(api.auth.ensureUserExists);
 }

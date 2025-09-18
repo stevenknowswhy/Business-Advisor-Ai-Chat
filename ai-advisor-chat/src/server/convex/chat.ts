@@ -9,6 +9,7 @@ import {
   updateConversationTitle,
   convex,
 } from "./client";
+import { api } from "../../../convex/_generated/api";
 import {
   createUserMessage,
   createAdvisorMessage,
@@ -28,14 +29,14 @@ import {
 export async function getAvailableAdvisorsRaw() {
   // Get raw advisors from Convex without client formatting
   // This preserves the full persona structure needed for prompt generation
-  return await convex.query("advisors:getAllActiveAdvisorsForMigration");
+  return await convex.query(api.advisors.getAllActiveAdvisorsForMigration);
 }
 
 /**
  * Get advisor by ID with full persona data for prompt generation
  */
 export async function getAdvisorByIdRaw(advisorId: string) {
-  return await convex.query("advisors:getAdvisorByIdForMigration", {
+  return await convex.query(api.advisors.getAdvisorByIdForMigration, {
     advisorId: advisorId as any
   });
 }
@@ -144,7 +145,7 @@ export async function generateTitleIfNeeded(data: {
         limit: 10,
       });
 
-      const historyText = history.map(m => 
+      const historyText = history.map((m: any) =>
         `${m.sender === 'user' ? 'User' : 'Advisor'}: ${m.content}`
       ).join('\n');
 

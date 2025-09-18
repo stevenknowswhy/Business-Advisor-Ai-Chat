@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     if (!activeAdvisorId) {
       const advisors = await getActiveAdvisors();
       if (advisors.length > 0) {
-        activeAdvisorId = advisors[0]._id;
+        activeAdvisorId = advisors[0]?._id;
       }
     }
 
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     // Get the created conversation to return formatted data
     const conversation = await getUserConversations();
-    const createdConversation = conversation.find(c => c._id === conversationId);
+    const createdConversation = conversation.find((c: any) => c._id === conversationId);
 
     if (!createdConversation) {
       throw new Error("Failed to retrieve created conversation");

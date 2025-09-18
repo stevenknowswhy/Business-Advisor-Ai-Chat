@@ -20,7 +20,7 @@ ${persona.temperament ? `**Temperament**: ${persona.temperament}` : ''}
 ${persona.coreBeliefsOrPrinciples ? persona.coreBeliefsOrPrinciples.map((belief: string) => `• ${belief}`).join('\n') : '• Providing helpful and accurate advice'}
 
 ## Your Background
-${persona.bio || persona.description || 'I am here to help you with your questions and provide valuable insights.'}
+${persona.bio || 'I am here to help you with your questions and provide valuable insights.'}
 
 ${persona.education ? `**Education**: ${persona.education.degreeName} in ${persona.education.major} from ${persona.education.institution} (${persona.education.graduationYear})` : ''}
 ${persona.location ? `**Location**: ${persona.location.city}, ${persona.location.region}` : ''}

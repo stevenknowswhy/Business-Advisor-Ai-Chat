@@ -18,6 +18,7 @@ interface AdvisorRailProps {
   onDeleteConversation?: (conversationId: string) => void;
   onCreateAdvisor?: (advisorData: AdvisorFormData) => Promise<void>;
   onUpdateAdvisor?: (advisorId: string, advisorData: AdvisorFormData) => Promise<void>;
+  isCollapsed?: boolean;
 }
 
 export function AdvisorRail({
@@ -31,6 +32,7 @@ export function AdvisorRail({
   onDeleteConversation,
   onCreateAdvisor,
   onUpdateAdvisor,
+  isCollapsed = false,
 }: AdvisorRailProps) {
   const [activeTab, setActiveTab] = useState<"advisors" | "conversations">("advisors");
   const [selectedAdvisorForProfile, setSelectedAdvisorForProfile] = useState<Advisor | null>(null);
@@ -116,6 +118,101 @@ export function AdvisorRail({
     setAdvisorToEdit(null);
   };
 
+  // If collapsed on desktop/tablet, show icon-only version
+  if (isCollapsed) {
+    return (
+      <>
+        <div className="h-full flex flex-col bg-gray-50">
+          {/* Collapsed Header */}
+          <div className="p-2 border-b border-gray-200 flex justify-center">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <UserGroupIcon className="w-5 h-5 text-white" />
+            </div>
+          </div>
+
+          {/* Collapsed Tab Navigation */}
+          <div className="flex flex-col border-b border-gray-200">
+            <button
+              type="button"
+              onClick={() => setActiveTab("advisors")}
+              className={`p-3 transition-colors ${
+                activeTab === "advisors"
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              }`}
+              title="Advisors"
+            >
+              <UserGroupIcon className="w-5 h-5 mx-auto" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("conversations")}
+              className={`p-3 transition-colors ${
+                activeTab === "conversations"
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              }`}
+              title="Conversations"
+            >
+              <ChatBubbleLeftIcon className="w-5 h-5 mx-auto" />
+            </button>
+          </div>
+
+          {/* Collapsed Content */}
+          <div className="flex-1 overflow-y-auto p-2">
+            {activeTab === "advisors" ? (
+              <div className="space-y-2">
+                {advisors.map((advisor) => (
+                  <button
+                    key={advisor.id}
+                    type="button"
+                    onClick={() => onAdvisorSelect(advisor.id)}
+                    className={`w-full p-2 rounded-lg transition-colors ${
+                      activeAdvisorId === advisor.id
+                        ? "bg-blue-100 text-blue-700"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                    title={advisor.name}
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium mx-auto ${getAdvisorColor(advisor.id)}`}>
+                      {getAdvisorInitials(advisor.name)}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={onNewConversation}
+                  className="w-full p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                  title="New Conversation"
+                >
+                  <PlusIcon className="w-5 h-5 mx-auto" />
+                </button>
+                {conversations.slice(0, 5).map((conversation) => (
+                  <button
+                    key={conversation.id}
+                    type="button"
+                    onClick={() => onConversationSelect(conversation.id)}
+                    className={`w-full p-2 rounded-lg transition-colors ${
+                      currentConversationId === conversation.id
+                        ? "bg-blue-100 text-blue-700"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                    title={conversation.title}
+                  >
+                    <ChatBubbleLeftIcon className="w-5 h-5 mx-auto" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <div className="h-full flex flex-col bg-gray-50">
@@ -128,6 +225,7 @@ export function AdvisorRail({
       {/* Tab Navigation */}
       <div className="flex border-b border-gray-200">
         <button
+          type="button"
           onClick={() => setActiveTab("advisors")}
           className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
             activeTab === "advisors"
@@ -139,6 +237,7 @@ export function AdvisorRail({
           Advisors
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab("conversations")}
           className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
             activeTab === "conversations"
@@ -231,6 +330,7 @@ function AdvisorsList({
       {advisors.map((advisor) => (
         <div key={advisor.id} className="relative mb-2">
           <button
+            type="button"
             onClick={() => onAdvisorSelect(advisor.id)}
             className={`w-full p-3 rounded-lg text-left transition-colors ${
               activeAdvisorId === advisor.id
@@ -322,6 +422,7 @@ function ConversationsList({
     <div className="p-2">
       {/* New Conversation Button */}
       <button
+        type="button"
         onClick={onNewConversation}
         className="w-full p-3 rounded-lg mb-3 bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
       >
@@ -340,6 +441,7 @@ function ConversationsList({
         conversations.map((conversation) => (
           <div key={conversation.id} className="relative mb-2 group">
             <button
+              type="button"
               onClick={() => onConversationSelect(conversation.id)}
               className={`w-full p-3 rounded-lg text-left transition-colors ${
                 currentConversationId === conversation.id
@@ -379,6 +481,7 @@ function ConversationsList({
             {/* Delete Button */}
             {onDeleteConversation && (
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDeleteConversation(conversation);

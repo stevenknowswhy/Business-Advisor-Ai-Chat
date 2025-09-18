@@ -5,6 +5,7 @@ import { PencilIcon, InformationCircleIcon, CheckIcon, XMarkIcon } from "@heroic
 import { getAdvisorInitials, getAdvisorColor, type Advisor, type Conversation } from "~/lib/chat";
 import { AuthHeader } from "~/components/auth/AuthHeader";
 import { ConversationsAPI } from "~/lib/api";
+import { HamburgerMenu } from "~/components/ui/HamburgerMenu";
 
 interface ConversationHeaderProps {
   conversation: Conversation | null;
@@ -56,8 +57,10 @@ export function ConversationHeader({ conversation, activeAdvisor, advisorSwitche
   return (
     <div className="border-b border-gray-200 bg-white">
       <div className="h-16 px-6 flex items-center justify-between">
-        {/* Left side - Conversation info */}
+        {/* Left side - Hamburger menu and Conversation info */}
         <div className="flex items-center space-x-4">
+          {/* Hamburger Menu */}
+          <HamburgerMenu />
           {activeAdvisor && (
             <div className="relative">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium ${getAdvisorColor(activeAdvisor.id)} ${advisorSwitched ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}>

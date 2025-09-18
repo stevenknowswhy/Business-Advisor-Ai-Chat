@@ -10,6 +10,7 @@ import { ConversationHeader } from "./ConversationHeader";
 import { useAdvisorChat, type Advisor, type Conversation } from "~/lib/chat";
 import { AdvisorsAPI, ConversationsAPI, MessagesAPI } from "~/lib/api";
 import { type AdvisorFormData } from "./AdvisorModal";
+import { useSidebar } from "~/contexts/SidebarContext";
 
 export function ChatInterface() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -477,10 +478,38 @@ export function ChatInterface() {
     );
   }
 
+  const { isCollapsed, isMobileOpen, closeMobileSidebar } = useSidebar();
+
   return (
-    <div className="h-screen flex bg-white">
+    <div className="h-screen flex bg-white relative">
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={closeMobileSidebar}
+        />
+      )}
+
       {/* Advisor Rail */}
-      <div className="w-80 border-r border-gray-200 flex flex-col">
+      <div
+        className={`
+          border-r border-gray-200 flex flex-col bg-white z-50 transition-all duration-300 ease-in-out
+          ${
+            // Mobile: overlay sidebar (hidden by default, shown when isMobileOpen)
+            "md:relative md:translate-x-0"
+          }
+          ${
+            // Mobile overlay positioning
+            isMobileOpen
+              ? "fixed inset-y-0 left-0 w-80 transform translate-x-0"
+              : "fixed inset-y-0 left-0 w-80 transform -translate-x-full md:translate-x-0"
+          }
+          ${
+            // Desktop/Tablet width based on collapsed state
+            isCollapsed ? "md:w-16" : "md:w-80"
+          }
+        `}
+      >
         <AdvisorRail
           advisors={advisors}
           conversations={conversations}
@@ -492,11 +521,12 @@ export function ChatInterface() {
           onDeleteConversation={handleDeleteConversation}
           onCreateAdvisor={handleCreateAdvisor}
           onUpdateAdvisor={handleUpdateAdvisor}
+          isCollapsed={isCollapsed}
         />
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Conversation Header */}
         <ConversationHeader
           conversation={currentConversation ? { ...currentConversation, title: conversationData?.title || currentConversation.title } : null}

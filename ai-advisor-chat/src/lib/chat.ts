@@ -283,9 +283,27 @@ export function useAdvisorChat(conversationId?: string) {
 }
 
 // Utility functions
-export function formatMessageTime(date: Date): string {
+export function formatMessageTime(date: Date | string | number | null | undefined): string {
+  // Handle null/undefined cases
+  if (!date) return "Unknown";
+
+  // Convert to Date object if needed
+  let dateObj: Date;
+  if (date instanceof Date) {
+    dateObj = date;
+  } else if (typeof date === 'string' || typeof date === 'number') {
+    dateObj = new Date(date);
+  } else {
+    return "Invalid date";
+  }
+
+  // Check if the date is valid
+  if (isNaN(dateObj.getTime())) {
+    return "Invalid date";
+  }
+
   const now = new Date();
-  const diff = now.getTime() - date.getTime();
+  const diff = now.getTime() - dateObj.getTime();
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
@@ -294,8 +312,8 @@ export function formatMessageTime(date: Date): string {
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
   if (days < 7) return `${days}d ago`;
-  
-  return date.toLocaleDateString();
+
+  return dateObj.toLocaleDateString();
 }
 
 export function getAdvisorInitials(name: string): string {

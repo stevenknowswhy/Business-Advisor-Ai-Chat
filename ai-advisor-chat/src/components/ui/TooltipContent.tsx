@@ -49,7 +49,7 @@ export function ConversationTooltipContent({
         </div>
       )}
 
-      {conversation.lastMessage && (
+      {conversation.lastMessage && conversation.lastMessage.createdAt && (
         <div className="text-gray-300 text-xs">
           Last message: {formatMessageTime(conversation.lastMessage.createdAt)}
         </div>

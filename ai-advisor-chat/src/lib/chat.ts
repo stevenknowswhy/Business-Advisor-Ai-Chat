@@ -27,6 +27,7 @@ export interface Advisor {
   mission: string;
   tags: string[];
   modelHint?: string;
+  category?: string;
 }
 
 export interface Message {

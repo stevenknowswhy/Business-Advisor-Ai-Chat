@@ -139,15 +139,47 @@
       }
     }
   ],
+  "modelConfiguration": {
+    "category": "Business",
+    "defaultModel": "anthropic/claude-3-sonnet",
+    "tierAvailability": {
+      "free": [
+        "anthropic/claude-3-haiku",
+        "openai/gpt-3.5-turbo"
+      ],
+      "regular": [
+        "anthropic/claude-3-haiku",
+        "openai/gpt-3.5-turbo",
+        "anthropic/claude-3-sonnet",
+        "meta/llama-2-70b-chat"
+      ],
+      "pro": [
+        "anthropic/claude-3-haiku",
+        "openai/gpt-3.5-turbo",
+        "anthropic/claude-3-sonnet",
+        "meta/llama-2-70b-chat",
+        "anthropic/claude-3-opus",
+        "openai/gpt-4-turbo"
+      ]
+    },
+    "modelRecommendations": {
+      "optimal": "anthropic/claude-3-sonnet",
+      "reasoning": "Best balance of analytical capability and cost efficiency for investment analysis and business evaluation tasks",
+      "alternatives": {
+        "budget": "anthropic/claude-3-haiku",
+        "premium": "anthropic/claude-3-opus"
+      }
+    }
+  },
   "metadata": {
-    "version": "1.3.0",
+    "version": "1.4.0",
     "createdAt": "2025-01-01T00:00:00Z",
-    "updatedAt": "2025-02-10T12:00:00Z",
+    "updatedAt": "2025-09-19T00:00:00Z",
     "owner": {
       "org": "AdvisorOS",
       "contactEmail": "ops@advisoros.dev"
     },
-    "tags": ["investor", "evaluation", "venture"]
+    "tags": ["investor", "evaluation", "venture", "business"]
   },
   "localization": {
     "defaultLanguage": "en",

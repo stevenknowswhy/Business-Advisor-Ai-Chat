@@ -1,0 +1,825 @@
+{
+  "execution": {
+    "startTime": "2025-09-19T23:35:05.722Z",
+    "endTime": "2025-09-19T23:35:12.183Z",
+    "duration": 6461,
+    "maxConcurrent": 4
+  },
+  "summary": {
+    "totalTests": 20,
+    "passed": 18,
+    "failed": 2,
+    "warnings": 0,
+    "duration": 6461,
+    "averageExecutionTime": 1169.05
+  },
+  "categorySummary": {
+    "mainApp": {
+      "total": 8,
+      "passed": 7,
+      "failed": 1,
+      "passRate": "87.5"
+    },
+    "blog": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "passRate": "100.0"
+    },
+    "rbac": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "passRate": "100.0"
+    },
+    "accessibility": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "passRate": "100.0"
+    },
+    "performance": {
+      "total": 2,
+      "passed": 1,
+      "failed": 1,
+      "passRate": "50.0"
+    }
+  },
+  "failedTests": [
+    {
+      "id": "homepage-001",
+      "name": "Homepage Load and Responsiveness",
+      "url": "/",
+      "type": "navigation",
+      "priority": "critical",
+      "checks": [
+        "page_loads_within_3s",
+        "no_console_errors",
+        "responsive_design",
+        "navigation_links_work",
+        "advisor_cards_display"
+      ],
+      "expectedResults": {
+        "loadTime": "< 3000ms",
+        "consoleErrors": 0,
+        "brokenLinks": 0
+      },
+      "fullUrl": "http://localhost:3000/",
+      "category": "mainApp",
+      "status": "fail",
+      "errors": [
+        "Simulated mainApp test failure"
+      ],
+      "warnings": [],
+      "performance": {
+        "loadTime": 2427,
+        "resourceCount": 63
+      },
+      "consoleLogs": [
+        {
+          "type": "error",
+          "text": "Simulated console error for testing",
+          "timestamp": "2025-09-19T23:35:07.196Z"
+        }
+      ],
+      "executionTime": 1472,
+      "timestamp": "2025-09-19T23:35:07.196Z"
+    },
+    {
+      "id": "perf-002",
+      "name": "Chat Interface Performance",
+      "url": "/chat",
+      "type": "performance",
+      "priority": "medium",
+      "thresholds": {
+        "loadTime": "< 2000ms",
+        "firstContentfulPaint": "< 1000ms",
+        "interactionToNextPaint": "< 100ms"
+      },
+      "fullUrl": "http://localhost:3000/chat",
+      "category": "performance",
+      "status": "fail",
+      "errors": [
+        "Simulated performance test failure"
+      ],
+      "warnings": [],
+      "performance": {
+        "loadTime": 2117,
+        "resourceCount": 56
+      },
+      "consoleLogs": [
+        {
+          "type": "error",
+          "text": "Simulated console error for testing",
+          "timestamp": "2025-09-19T23:35:12.183Z"
+        }
+      ],
+      "executionTime": 1574,
+      "timestamp": "2025-09-19T23:35:12.183Z"
+    }
+  ],
+  "slowestTests": [
+    {
+      "id": "blog-003",
+      "name": "Category Pages",
+      "url": "/category/{category}",
+      "type": "navigation",
+      "priority": "medium",
+      "checks": [
+        "category_page_loads",
+        "filtered_posts_display",
+        "category_info_shows",
+        "pagination_works"
+      ],
+      "fullUrl": "http://localhost:3001/category/%7Bcategory%7D",
+      "category": "blog",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 729,
+        "resourceCount": 32
+      },
+      "consoleLogs": [],
+      "executionTime": 1875,
+      "timestamp": "2025-09-19T23:35:10.608Z"
+    },
+    {
+      "id": "marketplace-002",
+      "name": "Advisor Profile View",
+      "url": "/marketplace/advisor/{advisorId}",
+      "type": "navigation",
+      "priority": "medium",
+      "checks": [
+        "profile_loads",
+        "advisor_info_displays",
+        "reviews_load",
+        "pricing_displays",
+        "contact_options_work"
+      ],
+      "fullUrl": "http://localhost:3000/marketplace/advisor/%7BadvisorId%7D",
+      "category": "mainApp",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 581,
+        "resourceCount": 26
+      },
+      "consoleLogs": [],
+      "executionTime": 1772,
+      "timestamp": "2025-09-19T23:35:08.968Z"
+    },
+    {
+      "id": "chat-001",
+      "name": "Chat Interface Functionality",
+      "url": "/chat",
+      "type": "interaction",
+      "priority": "high",
+      "checks": [
+        "chat_interface_loads",
+        "advisor_selection_works",
+        "message_send_works",
+        "message_history_loads",
+        "typing_indicator_works"
+      ],
+      "requiresAuth": true,
+      "fullUrl": "http://localhost:3000/chat",
+      "category": "mainApp",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 1174,
+        "resourceCount": 18
+      },
+      "consoleLogs": [],
+      "executionTime": 1755,
+      "timestamp": "2025-09-19T23:35:07.479Z"
+    },
+    {
+      "id": "auth-001",
+      "name": "User Registration Flow",
+      "url": "/signup",
+      "type": "form",
+      "priority": "critical",
+      "checks": [
+        "form_validation",
+        "email_field_works",
+        "password_field_works",
+        "successful_registration",
+        "redirects_to_dashboard"
+      ],
+      "formData": {
+        "email": "newuser@test.com",
+        "password": "newpassword123",
+        "confirmPassword": "newpassword123"
+      },
+      "fullUrl": "http://localhost:3000/signup",
+      "category": "mainApp",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 1517,
+        "resourceCount": 16
+      },
+      "consoleLogs": [],
+      "executionTime": 1744,
+      "timestamp": "2025-09-19T23:35:07.468Z"
+    },
+    {
+      "id": "perf-002",
+      "name": "Chat Interface Performance",
+      "url": "/chat",
+      "type": "performance",
+      "priority": "medium",
+      "thresholds": {
+        "loadTime": "< 2000ms",
+        "firstContentfulPaint": "< 1000ms",
+        "interactionToNextPaint": "< 100ms"
+      },
+      "fullUrl": "http://localhost:3000/chat",
+      "category": "performance",
+      "status": "fail",
+      "errors": [
+        "Simulated performance test failure"
+      ],
+      "warnings": [],
+      "performance": {
+        "loadTime": 2117,
+        "resourceCount": 56
+      },
+      "consoleLogs": [
+        {
+          "type": "error",
+          "text": "Simulated console error for testing",
+          "timestamp": "2025-09-19T23:35:12.183Z"
+        }
+      ],
+      "executionTime": 1574,
+      "timestamp": "2025-09-19T23:35:12.183Z"
+    }
+  ],
+  "results": [
+    {
+      "id": "blog-003",
+      "name": "Category Pages",
+      "url": "/category/{category}",
+      "type": "navigation",
+      "priority": "medium",
+      "checks": [
+        "category_page_loads",
+        "filtered_posts_display",
+        "category_info_shows",
+        "pagination_works"
+      ],
+      "fullUrl": "http://localhost:3001/category/%7Bcategory%7D",
+      "category": "blog",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 729,
+        "resourceCount": 32
+      },
+      "consoleLogs": [],
+      "executionTime": 1875,
+      "timestamp": "2025-09-19T23:35:10.608Z"
+    },
+    {
+      "id": "marketplace-002",
+      "name": "Advisor Profile View",
+      "url": "/marketplace/advisor/{advisorId}",
+      "type": "navigation",
+      "priority": "medium",
+      "checks": [
+        "profile_loads",
+        "advisor_info_displays",
+        "reviews_load",
+        "pricing_displays",
+        "contact_options_work"
+      ],
+      "fullUrl": "http://localhost:3000/marketplace/advisor/%7BadvisorId%7D",
+      "category": "mainApp",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 581,
+        "resourceCount": 26
+      },
+      "consoleLogs": [],
+      "executionTime": 1772,
+      "timestamp": "2025-09-19T23:35:08.968Z"
+    },
+    {
+      "id": "chat-001",
+      "name": "Chat Interface Functionality",
+      "url": "/chat",
+      "type": "interaction",
+      "priority": "high",
+      "checks": [
+        "chat_interface_loads",
+        "advisor_selection_works",
+        "message_send_works",
+        "message_history_loads",
+        "typing_indicator_works"
+      ],
+      "requiresAuth": true,
+      "fullUrl": "http://localhost:3000/chat",
+      "category": "mainApp",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 1174,
+        "resourceCount": 18
+      },
+      "consoleLogs": [],
+      "executionTime": 1755,
+      "timestamp": "2025-09-19T23:35:07.479Z"
+    },
+    {
+      "id": "auth-001",
+      "name": "User Registration Flow",
+      "url": "/signup",
+      "type": "form",
+      "priority": "critical",
+      "checks": [
+        "form_validation",
+        "email_field_works",
+        "password_field_works",
+        "successful_registration",
+        "redirects_to_dashboard"
+      ],
+      "formData": {
+        "email": "newuser@test.com",
+        "password": "newpassword123",
+        "confirmPassword": "newpassword123"
+      },
+      "fullUrl": "http://localhost:3000/signup",
+      "category": "mainApp",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 1517,
+        "resourceCount": 16
+      },
+      "consoleLogs": [],
+      "executionTime": 1744,
+      "timestamp": "2025-09-19T23:35:07.468Z"
+    },
+    {
+      "id": "perf-002",
+      "name": "Chat Interface Performance",
+      "url": "/chat",
+      "type": "performance",
+      "priority": "medium",
+      "thresholds": {
+        "loadTime": "< 2000ms",
+        "firstContentfulPaint": "< 1000ms",
+        "interactionToNextPaint": "< 100ms"
+      },
+      "fullUrl": "http://localhost:3000/chat",
+      "category": "performance",
+      "status": "fail",
+      "errors": [
+        "Simulated performance test failure"
+      ],
+      "warnings": [],
+      "performance": {
+        "loadTime": 2117,
+        "resourceCount": 56
+      },
+      "consoleLogs": [
+        {
+          "type": "error",
+          "text": "Simulated console error for testing",
+          "timestamp": "2025-09-19T23:35:12.183Z"
+        }
+      ],
+      "executionTime": 1574,
+      "timestamp": "2025-09-19T23:35:12.183Z"
+    },
+    {
+      "id": "homepage-001",
+      "name": "Homepage Load and Responsiveness",
+      "url": "/",
+      "type": "navigation",
+      "priority": "critical",
+      "checks": [
+        "page_loads_within_3s",
+        "no_console_errors",
+        "responsive_design",
+        "navigation_links_work",
+        "advisor_cards_display"
+      ],
+      "expectedResults": {
+        "loadTime": "< 3000ms",
+        "consoleErrors": 0,
+        "brokenLinks": 0
+      },
+      "fullUrl": "http://localhost:3000/",
+      "category": "mainApp",
+      "status": "fail",
+      "errors": [
+        "Simulated mainApp test failure"
+      ],
+      "warnings": [],
+      "performance": {
+        "loadTime": 2427,
+        "resourceCount": 63
+      },
+      "consoleLogs": [
+        {
+          "type": "error",
+          "text": "Simulated console error for testing",
+          "timestamp": "2025-09-19T23:35:07.196Z"
+        }
+      ],
+      "executionTime": 1472,
+      "timestamp": "2025-09-19T23:35:07.196Z"
+    },
+    {
+      "id": "dashboard-001",
+      "name": "User Dashboard",
+      "url": "/dashboard",
+      "type": "navigation",
+      "priority": "medium",
+      "checks": [
+        "dashboard_loads",
+        "user_info_displays",
+        "recent_chats_load",
+        "subscription_status_shows",
+        "settings_accessible"
+      ],
+      "requiresAuth": true,
+      "fullUrl": "http://localhost:3000/dashboard",
+      "category": "mainApp",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 1669,
+        "resourceCount": 34
+      },
+      "consoleLogs": [],
+      "executionTime": 1300,
+      "timestamp": "2025-09-19T23:35:08.779Z"
+    },
+    {
+      "id": "auth-002",
+      "name": "User Login Flow",
+      "url": "/login",
+      "type": "form",
+      "priority": "critical",
+      "checks": [
+        "form_validation",
+        "authentication_works",
+        "redirects_to_dashboard",
+        "session_persistence"
+      ],
+      "formData": {
+        "email": "user@test.com",
+        "password": "test123"
+      },
+      "fullUrl": "http://localhost:3000/login",
+      "category": "mainApp",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 794,
+        "resourceCount": 11
+      },
+      "consoleLogs": [],
+      "executionTime": 1283,
+      "timestamp": "2025-09-19T23:35:07.007Z"
+    },
+    {
+      "id": "payment-001",
+      "name": "Stripe Checkout Flow",
+      "url": "/checkout",
+      "type": "form",
+      "priority": "high",
+      "checks": [
+        "checkout_page_loads",
+        "stripe_integration_works",
+        "payment_form_validates",
+        "test_payment_processes",
+        "confirmation_page_displays"
+      ],
+      "testMode": true,
+      "requiresAuth": true,
+      "fullUrl": "http://localhost:3000/checkout",
+      "category": "mainApp",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 693,
+        "resourceCount": 22
+      },
+      "consoleLogs": [],
+      "executionTime": 1265,
+      "timestamp": "2025-09-19T23:35:08.733Z"
+    },
+    {
+      "id": "blog-002",
+      "name": "Blog Post View",
+      "url": "/posts/{postId}",
+      "type": "navigation",
+      "priority": "high",
+      "checks": [
+        "post_loads",
+        "content_displays",
+        "author_info_shows",
+        "comment_section_works",
+        "like_functionality",
+        "social_sharing_works"
+      ],
+      "fullUrl": "http://localhost:3001/posts/%7BpostId%7D",
+      "category": "blog",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 1055,
+        "resourceCount": 14
+      },
+      "consoleLogs": [],
+      "executionTime": 1173,
+      "timestamp": "2025-09-19T23:35:09.723Z"
+    },
+    {
+      "id": "rbac-001",
+      "name": "User Role Restrictions",
+      "url": "/admin",
+      "type": "authorization",
+      "priority": "critical",
+      "userRole": "user",
+      "expectedResult": "access_denied",
+      "checks": [
+        "redirect_to_login",
+        "error_message_shows",
+        "cannot_access_admin_functions"
+      ],
+      "fullUrl": "http://localhost:3000/admin",
+      "category": "rbac",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 1310,
+        "resourceCount": 31
+      },
+      "consoleLogs": [],
+      "executionTime": 1123,
+      "timestamp": "2025-09-19T23:35:10.609Z"
+    },
+    {
+      "id": "a11y-002",
+      "name": "Form Accessibility",
+      "url": "/login",
+      "type": "accessibility",
+      "priority": "high",
+      "checks": [
+        "form_labels_present",
+        "error_messages_accessible",
+        "focus_management",
+        "aria_attributes"
+      ],
+      "fullUrl": "http://localhost:3000/login",
+      "category": "accessibility",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 1505,
+        "resourceCount": 30
+      },
+      "consoleLogs": [],
+      "executionTime": 1061,
+      "timestamp": "2025-09-19T23:35:11.471Z"
+    },
+    {
+      "id": "perf-001",
+      "name": "Homepage Performance",
+      "url": "/",
+      "type": "performance",
+      "priority": "medium",
+      "thresholds": {
+        "loadTime": "< 3000ms",
+        "firstContentfulPaint": "< 1500ms",
+        "largestContentfulPaint": "< 2500ms",
+        "cumulativeLayoutShift": "< 0.1"
+      },
+      "fullUrl": "http://localhost:3000/",
+      "category": "performance",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 1614,
+        "resourceCount": 14
+      },
+      "consoleLogs": [],
+      "executionTime": 1007,
+      "timestamp": "2025-09-19T23:35:11.616Z"
+    },
+    {
+      "id": "cms-001",
+      "name": "CMS Admin Login",
+      "url": "/admin",
+      "type": "form",
+      "priority": "high",
+      "checks": [
+        "admin_login_page_loads",
+        "authentication_works",
+        "dashboard_loads",
+        "content_management_accessible"
+      ],
+      "formData": {
+        "email": "admin@test.com",
+        "password": "admin123"
+      },
+      "fullUrl": "http://localhost:3001/admin",
+      "category": "blog",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 922,
+        "resourceCount": 33
+      },
+      "consoleLogs": [],
+      "executionTime": 990,
+      "timestamp": "2025-09-19T23:35:09.769Z"
+    },
+    {
+      "id": "marketplace-001",
+      "name": "Marketplace Browse and Filter",
+      "url": "/marketplace",
+      "type": "interaction",
+      "priority": "high",
+      "checks": [
+        "marketplace_loads",
+        "advisor_cards_display",
+        "filter_functionality",
+        "search_functionality",
+        "pagination_works"
+      ],
+      "fullUrl": "http://localhost:3000/marketplace",
+      "category": "mainApp",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 914,
+        "resourceCount": 20
+      },
+      "consoleLogs": [],
+      "executionTime": 815,
+      "timestamp": "2025-09-19T23:35:07.827Z"
+    },
+    {
+      "id": "blog-001",
+      "name": "Blog Homepage",
+      "url": "/",
+      "type": "navigation",
+      "priority": "high",
+      "checks": [
+        "blog_loads_within_3s",
+        "no_console_errors",
+        "recent_posts_display",
+        "categories_work",
+        "search_functionality"
+      ],
+      "fullUrl": "http://localhost:3001/",
+      "category": "blog",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 953,
+        "resourceCount": 36
+      },
+      "consoleLogs": [],
+      "executionTime": 722,
+      "timestamp": "2025-09-19T23:35:08.550Z"
+    },
+    {
+      "id": "rbac-002",
+      "name": "Admin Role Access",
+      "url": "/admin",
+      "type": "authorization",
+      "priority": "critical",
+      "userRole": "admin",
+      "expectedResult": "access_granted",
+      "checks": [
+        "admin_dashboard_loads",
+        "admin_functions_accessible",
+        "no_access_errors"
+      ],
+      "fullUrl": "http://localhost:3000/admin",
+      "category": "rbac",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 961,
+        "resourceCount": 14
+      },
+      "consoleLogs": [],
+      "executionTime": 687,
+      "timestamp": "2025-09-19T23:35:10.410Z"
+    },
+    {
+      "id": "a11y-001",
+      "name": "Homepage Accessibility",
+      "url": "/",
+      "type": "accessibility",
+      "priority": "high",
+      "checks": [
+        "proper_heading_structure",
+        "alt_text_on_images",
+        "keyboard_navigation",
+        "color_contrast",
+        "screen_reader_friendly"
+      ],
+      "fullUrl": "http://localhost:3000/",
+      "category": "accessibility",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 1578,
+        "resourceCount": 12
+      },
+      "consoleLogs": [],
+      "executionTime": 645,
+      "timestamp": "2025-09-19T23:35:11.014Z"
+    },
+    {
+      "id": "rbac-003",
+      "name": "Premium User Features",
+      "url": "/dashboard/premium",
+      "type": "authorization",
+      "priority": "medium",
+      "userRole": "premium",
+      "expectedResult": "access_granted",
+      "checks": [
+        "premium_features_load",
+        "no_access_errors",
+        "premium_ui_elements_show"
+      ],
+      "fullUrl": "http://localhost:3000/dashboard/premium",
+      "category": "rbac",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 2315,
+        "resourceCount": 17
+      },
+      "consoleLogs": [],
+      "executionTime": 600,
+      "timestamp": "2025-09-19T23:35:10.369Z"
+    },
+    {
+      "id": "cms-002",
+      "name": "CMS Post Creation",
+      "url": "/admin/posts/new",
+      "type": "form",
+      "priority": "medium",
+      "checks": [
+        "post_editor_loads",
+        "title_field_works",
+        "content_editor_works",
+        "featured_image_upload",
+        "category_selection",
+        "post_publishes"
+      ],
+      "requiresAuth": true,
+      "testData": {
+        "title": "Test Post for E2E",
+        "content": "This is a test post created during E2E testing.",
+        "category": "technology"
+      },
+      "fullUrl": "http://localhost:3001/admin/posts/new",
+      "category": "blog",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "performance": {
+        "loadTime": 2125,
+        "resourceCount": 37
+      },
+      "consoleLogs": [],
+      "executionTime": 518,
+      "timestamp": "2025-09-19T23:35:09.486Z"
+    }
+  ]
+}

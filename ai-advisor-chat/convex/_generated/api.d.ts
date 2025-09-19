@@ -18,9 +18,13 @@ import type * as advisors from "../advisors.js";
 import type * as auth from "../auth.js";
 import type * as chat from "../chat.js";
 import type * as conversations from "../conversations.js";
+import type * as marketplace from "../marketplace.js";
 import type * as messages from "../messages.js";
 import type * as middleware from "../middleware.js";
+import type * as migrations from "../migrations.js";
+import type * as projects from "../projects.js";
 import type * as realtime from "../realtime.js";
+import type * as teams from "../teams.js";
 import type * as threadSummaries from "../threadSummaries.js";
 import type * as users from "../users.js";
 
@@ -38,9 +42,13 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   chat: typeof chat;
   conversations: typeof conversations;
+  marketplace: typeof marketplace;
   messages: typeof messages;
   middleware: typeof middleware;
+  migrations: typeof migrations;
+  projects: typeof projects;
   realtime: typeof realtime;
+  teams: typeof teams;
   threadSummaries: typeof threadSummaries;
   users: typeof users;
 }>;

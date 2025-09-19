@@ -1,0 +1,134 @@
+{
+  "teamId": "startup-squad-v1",
+  "teamSchemaVersion": "1.0.0",
+  "name": "The Startup Squad",
+  "tagline": "Stress-test your business idea from every critical angle",
+  "description": "A comprehensive team of advisors designed to evaluate and strengthen your startup idea from vision to execution. Perfect for early-stage founders and entrepreneurs.",
+  "category": "Startup & Entrepreneurship",
+  "targetAudience": ["Early-stage founders", "Entrepreneurs", "Startup teams", "Product managers"],
+  "useCases": [
+    "Business idea validation",
+    "Product-market fit analysis",
+    "Startup planning and strategy",
+    "Investor pitch preparation",
+    "Team formation and role definition"
+  ],
+  "advisorRoles": [
+    {
+      "roleId": "visionary",
+      "roleName": "The Visionary",
+      "roleDescription": "Focuses on the 'Why' - product vision, market disruption, and long-term mission",
+      "advisorId": "startup-visionary-v1",
+      "primaryFocus": ["Product vision", "Market opportunity", "User experience", "Team inspiration"],
+      "interactionStyle": "Inspiring and forward-thinking",
+      "sessionPriority": 1
+    },
+    {
+      "roleId": "analyst",
+      "roleName": "The Analyst",
+      "roleDescription": "Focuses on the 'What' - data analysis, market sizing, and unit economics",
+      "advisorId": "startup-analyst-v1",
+      "primaryFocus": ["Financial modeling", "Market sizing", "Unit economics", "KPI development"],
+      "interactionStyle": "Data-driven and pragmatic",
+      "sessionPriority": 2
+    },
+    {
+      "roleId": "operator",
+      "roleName": "The Operator",
+      "roleDescription": "Focuses on the 'How' - execution, logistics, and implementation planning",
+      "advisorId": "startup-operator-v1",
+      "primaryFocus": ["Technical architecture", "Hiring plans", "Quarterly roadmaps", "Logistics"],
+      "interactionStyle": "Practical and execution-focused",
+      "sessionPriority": 3
+    },
+    {
+      "roleId": "skeptic",
+      "roleName": "The Skeptic",
+      "roleDescription": "Focuses on 'Why Not' - risk assessment and critical analysis",
+      "advisorId": "startup-skeptic-v1",
+      "primaryFocus": ["Risk identification", "Critical analysis", "Failure scenarios", "Red flags"],
+      "interactionStyle": "Critical and thorough",
+      "sessionPriority": 4
+    },
+    {
+      "roleId": "storyteller",
+      "roleName": "The Storyteller (Bonus)",
+      "roleDescription": "Focuses on the 'Who' - branding, narrative, and marketing",
+      "advisorId": "startup-storyteller-v1",
+      "primaryFocus": ["Brand strategy", "Marketing messaging", "Public relations", "Customer communication"],
+      "interactionStyle": "Creative and engaging",
+      "sessionPriority": 5,
+      "optional": true
+    }
+  ],
+  "interactionProtocol": {
+    "sessionFlow": "sequential",
+    "crossAdvisorCommunication": true,
+    "contextSharing": "full",
+    "decisionMaking": "consensusBased",
+    "feedbackLoop": "iterative"
+  },
+  "onboarding": {
+    "estimatedTime": "15 minutes",
+    "prerequisites": ["Business idea concept", "Target market definition", "Basic team information"],
+    "welcomeMessage": "Welcome to The Startup Squad! We'll help you stress-test your business idea from every angle. Your team of expert advisors is ready to dive deep into your vision, analyze the numbers, plan the execution, identify potential risks, and craft your story.",
+    "firstSession": {
+      "type": "teamIntroduction",
+      "duration": "30 minutes",
+      "objectives": ["Understand your business concept", "Introduce each advisor's role", "Set expectations for the process"]
+    }
+  },
+  "customizationOptions": {
+    "removableAdvisors": ["storyteller"],
+    "renameableRoles": true,
+    "adjustablePersonalities": true,
+    "configurableFocusAreas": true,
+    "teamSize": "flexible (3-5 advisors)"
+  },
+  "pricing": {
+    "deploymentFee": {
+      "free": 0,
+      "regular": 50,
+      "pro": 0
+    },
+    "monthlyFee": {
+      "free": 0,
+      "regular": 20,
+      "pro": 0
+    },
+    "sessionPricing": {
+      "free": "limited",
+      "regular": "unlimited",
+      "pro": "unlimited"
+    }
+  },
+  "successMetrics": [
+    {
+      "metric": "Idea Validation Score",
+      "description": "Comprehensive assessment of business idea viability",
+      "unit": "score (1-10)"
+    },
+    {
+      "metric": "Risk Mitigation Index",
+      "description": "Reduction in identified business risks",
+      "unit": "%"
+    },
+    {
+      "metric": "Action Plan Completion",
+      "description": "Completion rate of recommended action items",
+      "unit": "%"
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "createdAt": "2025-09-19T00:00:00Z",
+    "updatedAt": "2025-09-19T00:00:00Z",
+    "owner": {
+      "org": "AdvisorOS",
+      "contactEmail": "ops@advisoros.dev"
+    },
+    "tags": ["startup", "entrepreneurship", "business", "validation", "team"],
+    "featured": true,
+    "popularityScore": 95
+  }
+}

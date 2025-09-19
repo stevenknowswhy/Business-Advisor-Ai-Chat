@@ -2,33 +2,57 @@
 
 [![WCAG 2.1 AA Compliant](https://img.shields.io/badge/WCAG%202.1-AA%20Compliant-green.svg)](https://www.w3.org/WAI/WCAG21/quickref/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-15.5.2-black.svg)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.2.3-black.svg)](https://nextjs.org/)
+[![Open Router](https://img.shields.io/badge/Open%20Router-Model%20Agnostic-purple.svg)](https://openrouter.ai/)
+[![Convex](https://img.shields.io/badge/Convex-Real--time%20Database-orange.svg)](https://convex.dev/)
 [![Accessibility](https://img.shields.io/badge/Accessibility-Screen%20Reader%20Support-brightgreen.svg)](https://www.w3.org/WAI/)
 
-A modern, accessible AI advisory board application built with Next.js and TypeScript, featuring specialized AI advisors with distinct personas and expertise areas. The application provides a Teams-like interface for seamless interaction with multiple AI advisors, complete with comprehensive accessibility support and professional-grade user experience.
+A modern, accessible AI advisory board application built on Open Router, Next.js, TypeScript, and Convex real-time database. Features model-agnostic AI capabilities with access to multiple state-of-the-art language models, comprehensive marketplace for discovering AI advisors, project-based chat organization, and intelligent model selection. The application provides users with choice and control over their AI interactions through per-advisor model configuration and user-selectable model preferences.
 
 ## 🎯 Key Features
 
-### 🤖 **AI Advisor Management**
-- **Multi-Advisor Chat**: Switch between specialized AI advisors seamlessly
-- **@Mention System**: Natural advisor switching with intelligent autocomplete
-- **Custom Advisor Creation**: Full CRUD operations for creating and managing advisors
-- **Advisor Profiles**: Detailed advisor information with images, expertise, and configurations
-- **JSON Configuration**: Advanced advisor customization with validation
+### 🛍️ **Marketplace & Discovery**
+- **Advisor Marketplace**: Browse and discover AI advisors from a comprehensive marketplace
+- **Advisor Profiles**: Detailed advisor information with expertise, ratings, and specializations
+- **Smart Filtering**: Find advisors by expertise, industry, or specific needs
+- **One-Click Selection**: Easily add advisors to your advisory board
+- **Real-time Updates**: Live marketplace with the latest advisor additions
 
-### 💬 **Conversation Management**
-- **Real-time Streaming**: Token-by-token AI responses via Server-Sent Events
-- **Conversation Persistence**: All chats saved with full history and metadata
-- **Inline Title Editing**: Edit conversation titles with save/cancel functionality
-- **Message Actions**: Individual message management and deletion
-- **Conversation History**: Comprehensive chat history with advisor context
+### 📁 **Project-Based Organization**
+- **Project Management**: Organize conversations by project context instead of individual advisors
+- **Smart Grouping**: Group related chats under user-created projects
+- **Project Creation**: Create new projects with custom names and descriptions
+- **Context Switching**: Seamlessly switch between different project contexts
+- **Organized Workflow**: Maintain clear separation between different business initiatives
 
-### 👤 **User Experience**
-- **Enhanced Authentication**: Clerk integration with real user name display
-- **Professional UI**: Teams-like interface with advisor rail and chat area
+### 🤖 **Open Router AI Integration**
+- **Model-Agnostic AI**: Built on Open Router with access to multiple state-of-the-art AI models
+- **Per-Advisor Models**: Each advisor configured with optimal Open Router models for their specialty
+- **User Model Selection**: Dropdown interface for users to choose their preferred AI models
+- **Smart Model Routing**: Intelligent selection based on task complexity, cost, and performance
+- **Real-time Performance**: Live model metrics including response time, cost, and reliability
+- **Fallback Systems**: Reliable AI responses with automatic model switching if issues occur
+
+### 💬 **Real-time Communication**
+- **Live Chat**: Real-time messaging powered by Convex database
+- **Instant Updates**: See messages and responses in real-time across all devices
+- **Conversation Persistence**: All chats automatically saved with full history
+- **Message Management**: Edit, delete, and manage individual messages
+- **Cross-Device Sync**: Seamless synchronization across all your devices
+
+### 🎨 **Modern User Interface**
+- **Redesigned Sidebar**: New Projects and Chats tabs with intuitive navigation
+- **Marketplace Access**: Quick access to marketplace via dedicated button/icon
 - **Responsive Design**: Mobile-first approach with seamless cross-device experience
-- **Subscription Tiers**: Model access based on user plans (Free/Base/Premium)
+- **Professional UI**: Clean, modern interface optimized for productivity
+- **Smart Tooltips**: Contextual help and guidance throughout the application
+
+### 🔐 **Authentication & Security**
+- **Clerk Integration**: Robust authentication with JWT token validation
 - **Real User Display**: Shows actual user names from authentication provider
+- **Secure Sessions**: Protected routes and secure session management
+- **Convex Auth**: Seamless integration between Clerk and Convex database
+- **Privacy First**: User data protection and privacy-focused design
 
 ### ♿ **Accessibility & Compliance**
 - **WCAG 2.1 AA Compliant**: Full accessibility compliance for all users
@@ -39,72 +63,144 @@ A modern, accessible AI advisory board application built with Next.js and TypeSc
 
 ## 🆕 Recent Updates (Latest Release)
 
-### 🌟 **Accessibility Enhancements**
-- ✅ **WCAG 2.1 AA Compliance**: Achieved full accessibility compliance
-- ✅ **Form Labeling**: Added `aria-label`, `title`, and `placeholder` attributes to all form inputs
-- ✅ **Button Accessibility**: Proper `type`, `aria-label`, and `title` attributes for all buttons
-- ✅ **Modal Semantics**: Implemented `role="dialog"`, `aria-modal`, and `aria-labelledby`
-- ✅ **Screen Reader Support**: Comprehensive accessibility for assistive technologies
+### 🚀 **Major Architecture Migration**
+- ✅ **Convex Database Migration**: Migrated from Prisma/PostgreSQL to Convex real-time database
+- ✅ **Real-time Features**: All data now syncs in real-time across devices and users
+- ✅ **Clerk + Convex Integration**: Seamless authentication with JWT token validation
+- ✅ **Performance Boost**: Significantly improved performance with real-time updates
+- ✅ **Scalability**: Enhanced scalability with Convex's serverless architecture
 
-### 🚀 **New Features**
-- ✅ **Complete Advisor Management**: Create, edit, delete, and manage AI advisors
-- ✅ **AdvisorModal Component**: Comprehensive form with validation and JSON configuration
-- ✅ **Enhanced User Display**: Real user names from Clerk authentication
-- ✅ **Conversation Title Editing**: Inline editing with save/cancel functionality
-- ✅ **Database Schema Updates**: New advisor fields (firstName, lastName, imageUrl)
-- ✅ **Full CRUD API**: Complete REST API endpoints for advisor management
+### 🛍️ **Marketplace Feature**
+- ✅ **Advisor Marketplace**: Complete marketplace for discovering and selecting AI advisors
+- ✅ **Marketplace Navigation**: Dedicated marketplace access from sidebar
+- ✅ **Advisor Discovery**: Browse advisors by expertise, ratings, and specializations
+- ✅ **One-Click Selection**: Easy advisor selection and addition to advisory board
+- ✅ **Real-time Updates**: Live marketplace with instant advisor additions
 
-### 🔧 **Code Quality Improvements**
-- ✅ **TypeScript Enhancements**: Added `forceConsistentCasingInFileNames` for cross-platform compatibility
-- ✅ **CSS Optimization**: Replaced inline styles with Tailwind CSS arbitrary values
-- ✅ **Error Handling**: Enhanced null safety and error handling throughout
-- ✅ **Component Architecture**: Improved prop passing and data flow
-- ✅ **Performance**: Optimized CSS bundling and compilation
+### 📁 **Project-Based Organization**
+- ✅ **Sidebar Redesign**: Complete redesign with Projects and Chats tabs
+- ✅ **Project Management**: Organize conversations by project context
+- ✅ **Smart Navigation**: Intuitive navigation between projects and marketplace
+- ✅ **Context Organization**: Group related chats under user-created projects
+- ✅ **Workflow Optimization**: Streamlined workflow for better productivity
 
-## 🤖 AI Advisors
+### 🎨 **UI/UX Improvements**
+- ✅ **Modern Interface**: Completely redesigned sidebar with improved navigation
+- ✅ **Responsive Design**: Enhanced mobile and tablet experience
+- ✅ **Smart Tooltips**: Contextual help and guidance throughout the application
+- ✅ **Professional Polish**: Clean, modern interface optimized for productivity
+- ✅ **Accessibility Maintained**: All improvements maintain WCAG 2.1 AA compliance
 
-### Alex Reyes - Investor Advisor
-- **Expertise**: Venture capital, startup evaluation, fundraising strategies
-- **Personality**: Radically candid, decisive, zero-fluff communication
-- **Specializes in**: Investment readiness, market validation, pitch feedback
-- **Model**: Premium tier (Claude 3.5 Sonnet)
+### 🔧 **Technical Enhancements**
+- ✅ **Next.js 15.2.3**: Updated to latest Next.js with improved performance
+- ✅ **Real-time Database**: Convex integration for instant data synchronization
+- ✅ **Authentication Flow**: Enhanced Clerk integration with JWT validation
+- ✅ **Error Resolution**: Fixed all runtime errors and improved stability
+- ✅ **Code Quality**: Improved TypeScript strict mode and error handling
 
-### Amara Johnson - Chief Technology Officer
-- **Expertise**: Technical architecture, team scaling, system design
-- **Personality**: Pragmatic, business-aware, systems thinking approach
-- **Specializes in**: Tech stack decisions, scaling challenges, technical debt management
-- **Model**: Base tier (GPT-4o Mini)
+## 🎯 User Workflow
+
+### **Modern Project-Based Approach**
+
+The AI Advisor Chat application follows an intuitive workflow designed for maximum productivity:
+
+1. **🏗️ Create Projects**
+   - Organize your work by creating projects for different business initiatives
+   - Name projects based on your specific needs (e.g., "Product Launch", "Fundraising")
+   - Group related conversations under each project for better organization
+
+2. **🛍️ Browse Marketplace**
+   - Access the comprehensive advisor marketplace from the sidebar
+   - Discover AI advisors by expertise, industry, and specialization
+   - Read detailed advisor profiles with ratings and specializations
+   - Filter advisors based on your specific project needs
+
+3. **➕ Add Advisors**
+   - Select relevant advisors from the marketplace with one click
+   - Add multiple advisors to your advisory board
+   - Advisors become available across all your projects
+   - Build a diverse advisory team for comprehensive guidance
+
+4. **💬 Start Conversations**
+   - Begin conversations within specific project contexts
+   - Switch between advisors seamlessly during conversations
+   - Maintain conversation history and context across sessions
+   - Enjoy real-time responses and cross-device synchronization
+
+### **Key Benefits**
+
+- **🎯 Context-Aware**: Conversations are organized by project, maintaining relevant context
+- **⚡ Real-time**: All interactions sync instantly across devices
+- **🔄 Flexible**: Switch between advisors and projects seamlessly
+- **📱 Accessible**: Full functionality on desktop, tablet, and mobile devices
+- **🔒 Secure**: All data is protected with enterprise-grade security
+
+## 🤖 AI Advisors Available
+
+The marketplace features a diverse range of AI advisors, including:
+
+### **Business Strategy Advisors**
+- **Investment & Fundraising**: Venture capital, startup evaluation, pitch feedback
+- **Operations & Scaling**: Business operations, team building, process optimization
+- **Marketing & Growth**: Digital marketing, customer acquisition, brand strategy
+
+### **Technical Advisors**
+- **Technology Leadership**: CTO guidance, technical architecture, system design
+- **Product Development**: Product strategy, user experience, development processes
+- **Data & Analytics**: Data strategy, analytics implementation, AI integration
+
+### **Industry Specialists**
+- **Healthcare & Biotech**: Regulatory compliance, clinical trials, market access
+- **Fintech & Finance**: Financial services, regulatory requirements, risk management
+- **E-commerce & Retail**: Online retail strategy, supply chain, customer experience
+
+*All advisors are powered by advanced AI models including DeepSeek Chat v3.1, Nemotron, and other cutting-edge language models.*
 
 ## 🛠️ Technical Stack
 
 ### **Frontend**
-- **Framework**: Next.js 15.5.2 with App Router and Turbopack
-- **Language**: TypeScript 5.0+ with strict configuration
-- **Styling**: Tailwind CSS with utility-first approach
+- **Framework**: Next.js 15.2.3 with App Router and Turbopack
+- **Language**: TypeScript 5.8+ with strict configuration
+- **Styling**: Tailwind CSS 4.0+ with utility-first approach
 - **UI Components**: Custom components with accessibility-first design
-- **State Management**: React hooks with optimistic updates
-- **Real-time**: Server-Sent Events via Vercel AI SDK
+- **State Management**: React hooks with real-time updates via Convex
+- **Real-time**: Convex real-time database with live queries
 
-### **Backend**
-- **Runtime**: Node.js with Edge Runtime support
-- **Database**: Neon PostgreSQL with connection pooling
-- **ORM**: Prisma with type-safe database access
-- **Authentication**: Clerk with JWT validation
-- **AI Integration**: OpenRouter API with multiple model support
-- **API Design**: RESTful endpoints with proper error handling
+### **Backend & Database**
+- **Database**: Convex real-time database with serverless architecture
+- **Real-time Sync**: Automatic real-time synchronization across all clients
+- **Authentication**: Clerk with JWT validation and Convex integration
+- **AI Integration**: OpenRouter API with multiple model support (DeepSeek, Nemotron)
+- **API Design**: Convex functions with type-safe mutations and queries
+- **Serverless**: Fully serverless architecture with automatic scaling
+
+### **Authentication & Security**
+- **Provider**: Clerk authentication with JWT tokens
+- **Integration**: Seamless Clerk + Convex authentication flow
+- **JWT Validation**: Automatic JWT validation for all database operations
+- **Security**: Row-level security and user-based data isolation
+- **Session Management**: Secure session handling with automatic refresh
 
 ### **Development & Deployment**
 - **Build Tool**: Turbopack for fast development builds
 - **Code Quality**: ESLint, Prettier, TypeScript strict mode
-- **Testing**: Built-in accessibility testing and validation
-- **Deployment**: Vercel with GitHub Actions automation
-- **Monitoring**: Built-in logging and error tracking
+- **Testing**: Jest with accessibility testing (jest-axe)
+- **Deployment**: Vercel with automatic Convex deployment
+- **Monitoring**: Built-in logging and real-time error tracking
+
+### **Real-time Features**
+- **Live Queries**: Automatic UI updates when data changes
+- **Real-time Chat**: Instant message delivery and synchronization
+- **Cross-Device Sync**: Seamless synchronization across all devices
+- **Optimistic Updates**: Immediate UI feedback with automatic rollback
+- **Offline Support**: Automatic reconnection and data synchronization
 
 ### **Accessibility & Performance**
-- **Standards**: WCAG 2.1 AA compliance
+- **Standards**: WCAG 2.1 AA compliance maintained
 - **Screen Readers**: Full ARIA support and semantic HTML
-- **Performance**: Optimized CSS bundling and lazy loading
+- **Performance**: Optimized with real-time updates and lazy loading
 - **SEO**: Next.js built-in SEO optimization
+- **Mobile-First**: Responsive design with mobile optimization
 
 ## 🚀 Getting Started
 
@@ -112,7 +208,7 @@ A modern, accessible AI advisory board application built with Next.js and TypeSc
 
 - **Node.js**: Version 18.0 or higher
 - **Package Manager**: npm, yarn, or pnpm
-- **Database**: Neon PostgreSQL account ([Get one here](https://neon.tech/))
+- **Database**: Convex account ([Sign up here](https://convex.dev/))
 - **Authentication**: Clerk account ([Sign up here](https://clerk.com/))
 - **AI Provider**: OpenRouter API key ([Get API key](https://openrouter.ai/))
 
@@ -133,43 +229,57 @@ A modern, accessible AI advisory board application built with Next.js and TypeSc
    pnpm install
    ```
 
-3. **Set up environment variables**
+3. **Set up Convex**
    ```bash
-   cp .env.example .env
+   # Install Convex CLI globally
+   npm install -g convex
+
+   # Initialize Convex (if not already done)
+   npx convex dev --configure
+
+   # This will create a new Convex project and generate the necessary configuration
    ```
 
-   Configure your environment variables in `.env`:
+4. **Set up environment variables**
+   Create a `.env.local` file in the root directory:
    ```bash
-   # Neon Database Configuration
-   DATABASE_URL="postgresql://username:password@host/database?sslmode=require"
+   # Convex Configuration (generated by `npx convex dev`)
+   NEXT_PUBLIC_CONVEX_URL="https://your-deployment.convex.cloud"
+   CONVEX_DEPLOYMENT="dev:your-deployment-name"
+
+   # Clerk Authentication
+   CLERK_SECRET_KEY="sk_test_your-secret-key-here"
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_your-publishable-key-here"
+   CLERK_JWT_ISSUER_DOMAIN="https://your-clerk-domain.clerk.accounts.dev"
 
    # OpenRouter Configuration
    OPENROUTER_API_KEY="sk-or-your-api-key-here"
    APP_URL="http://localhost:3000"
 
-   # Model tiering (optional overrides)
-   OPENROUTER_FREE_MODEL="google/gemini-flash-1.5"
-   OPENROUTER_BASE_MODEL="openai/gpt-4o-mini"
-   OPENROUTER_PREMIUM_MODEL="anthropic/claude-3.5-sonnet"
-
-   # Clerk Authentication
-   CLERK_SECRET_KEY="sk_test_your-secret-key-here"
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_your-publishable-key-here"
+   # Model Configuration (optional overrides)
+   OPENROUTER_FREE_MODEL="nvidia/nemotron-nano-9b-v2:free"
+   OPENROUTER_BASE_MODEL="deepseek/deepseek-chat-v3-0324"
+   OPENROUTER_PREMIUM_MODEL="deepseek/deepseek-chat-v3.1"
    ```
 
-4. **Set up the database**
+5. **Configure Clerk Authentication**
+   - Create a Clerk application at [clerk.com](https://clerk.com/)
+   - In your Clerk dashboard, go to **JWT Templates**
+   - Create a new template named **"convex"** with:
+     - **Audience**: `convex`
+     - **Issuer**: Your Clerk domain (e.g., `https://your-app.clerk.accounts.dev`)
+     - **Include standard claims**: name, email, picture, etc.
+
+6. **Deploy Convex functions**
    ```bash
-   # Generate Prisma client
-   npx prisma generate
+   # Deploy your Convex functions to the cloud
+   npx convex deploy
 
-   # Push database schema
-   npx prisma db push
-
-   # Seed the database with initial advisors
-   npm run db:seed
+   # Start Convex development server
+   npx convex dev
    ```
 
-5. **Start the development server**
+7. **Start the development server**
    ```bash
    npm run dev
    # or
@@ -178,8 +288,8 @@ A modern, accessible AI advisory board application built with Next.js and TypeSc
    pnpm dev
    ```
 
-6. **Open your browser**
-   Navigate to `http://localhost:3000` and start chatting with AI advisors!
+8. **Open your browser**
+   Navigate to `http://localhost:3000` and start exploring the marketplace and creating projects!
 
 ### Available Scripts
 
@@ -190,12 +300,12 @@ npm run build        # Build for production
 npm run start        # Start production server
 npm run preview      # Build and start production server
 
-# Database
-npm run db:generate  # Generate Prisma client and run migrations
-npm run db:migrate   # Deploy migrations to production
-npm run db:push      # Push schema changes to database
-npm run db:seed      # Seed database with initial data
-npm run db:studio    # Open Prisma Studio
+# Convex Database
+npx convex dev       # Start Convex development server
+npx convex deploy    # Deploy Convex functions to production
+npx convex dashboard # Open Convex dashboard
+npx convex import    # Import data to Convex
+npx convex export    # Export data from Convex
 
 # Code Quality
 npm run lint         # Run ESLint
@@ -203,6 +313,13 @@ npm run lint:fix     # Fix ESLint issues automatically
 npm run format:check # Check code formatting
 npm run format:write # Format code with Prettier
 npm run check        # Run linting and type checking
+npm run typecheck    # Run TypeScript type checking
+
+# Testing
+npm run test         # Run Jest tests
+npm run test:watch   # Run tests in watch mode
+npm run test:ci      # Run tests for CI/CD
+npm run test:marketplace # Run marketplace-specific tests
 ```
 
 ## ♿ Accessibility Features
@@ -256,56 +373,72 @@ The application has been tested with:
 
 ### **Production Deployment**
 
-The application is deployed on Vercel with automated GitHub Actions integration:
+The application uses a modern serverless deployment stack with Vercel and Convex:
 
 #### **Automatic Deployment**
-- **Trigger**: Automatic deployment on pushes to `master` branch
-- **Build Process**: Next.js build with Turbopack optimization
-- **Database**: Automatic Prisma migrations on deployment
-- **Environment**: Production environment variables via GitHub secrets
+- **Frontend**: Automatic Vercel deployment on pushes to `master` branch
+- **Database**: Convex functions automatically deployed with `npx convex deploy`
+- **Real-time**: Convex handles all real-time database operations
+- **Environment**: Production environment variables via Vercel dashboard
 
-#### **GitHub Actions Workflow**
-```yaml
-# .github/workflows/deploy-production.yml
-name: Deploy Production (ai-advisor-chat)
-on:
-  push:
-    branches: [master]
+#### **Deployment Process**
+1. **Deploy Convex Functions**
+   ```bash
+   # Deploy database functions to production
+   npx convex deploy --prod
+   ```
 
-jobs:
-  deploy-production:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger Vercel Deploy
-        run: curl -X POST ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
-      - name: Health Check
-        run: curl -f ${{ secrets.PRODUCTION_BASE_URL }}/api/health
-```
+2. **Deploy Frontend to Vercel**
+   ```bash
+   # Deploy to Vercel (automatic via GitHub integration)
+   git push origin master
+
+   # Or manual deployment
+   vercel --prod
+   ```
 
 #### **Environment Configuration**
 Required environment variables for production:
-- `DATABASE_URL`: Neon PostgreSQL connection string
-- `OPENROUTER_API_KEY`: OpenRouter API key for AI models
-- `CLERK_SECRET_KEY`: Clerk authentication secret
+
+**Vercel Environment Variables:**
+- `NEXT_PUBLIC_CONVEX_URL`: Your production Convex deployment URL
+- `CLERK_SECRET_KEY`: Clerk authentication secret key
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Clerk public key
+- `CLERK_JWT_ISSUER_DOMAIN`: Your Clerk domain for JWT validation
+- `OPENROUTER_API_KEY`: OpenRouter API key for AI models
+- `OPENROUTER_BASE_MODEL`: Base tier AI model
+- `OPENROUTER_PREMIUM_MODEL`: Premium tier AI model
+
+**Convex Environment Variables:**
+- Set via Convex dashboard or CLI: `npx convex env set VARIABLE_NAME value`
 
 ### **Manual Deployment**
 
-For manual deployment to Vercel:
+For manual deployment:
 
 ```bash
-# Install Vercel CLI
-npm i -g vercel
+# 1. Deploy Convex functions
+npx convex deploy --prod
 
-# Deploy to production
+# 2. Install Vercel CLI and deploy
+npm i -g vercel
 vercel --prod
 
-# Set environment variables
-vercel env add DATABASE_URL
-vercel env add OPENROUTER_API_KEY
+# 3. Set environment variables in Vercel
+vercel env add NEXT_PUBLIC_CONVEX_URL
 vercel env add CLERK_SECRET_KEY
 vercel env add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+vercel env add CLERK_JWT_ISSUER_DOMAIN
+vercel env add OPENROUTER_API_KEY
 ```
+
+### **Health Monitoring**
+
+The application includes built-in health monitoring:
+- **Health Endpoint**: `/api/health` for monitoring services
+- **Real-time Status**: Convex dashboard for database monitoring
+- **Error Tracking**: Automatic error logging and reporting
+- **Performance**: Built-in performance monitoring with Core Web Vitals
 
 ## 📊 Performance & Monitoring
 
@@ -347,15 +480,27 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **Next.js Team**: For the excellent React framework
-- **Vercel**: For seamless deployment and hosting
-- **Clerk**: For robust authentication solutions
-- **OpenRouter**: For AI model access and integration
-- **Neon**: For serverless PostgreSQL database
-- **Accessibility Community**: For guidelines and best practices
+- **Next.js Team**: For the excellent React framework with App Router
+- **Convex**: For the revolutionary real-time database and serverless backend
+- **Vercel**: For seamless deployment and hosting platform
+- **Clerk**: For robust authentication solutions and JWT integration
+- **OpenRouter**: For AI model access and integration with multiple providers
+- **DeepSeek**: For advanced AI models powering our advisor conversations
+- **Tailwind CSS**: For the utility-first CSS framework
+- **Accessibility Community**: For guidelines and best practices ensuring inclusive design
 
 ---
 
-**Built with ❤️ and accessibility in mind**
+**Built with ❤️, accessibility, and real-time collaboration in mind**
 
 For questions, issues, or contributions, please visit our [GitHub repository](https://github.com/stevenknowswhy/Business-Advisor-Ai-Chat) or open an issue.
+
+### **Live Demo**
+Experience the AI Advisor Chat application: [Visit Live Demo](https://v0-business-consulting-website-agents-v3.vercel.app)
+
+### **Key Features Highlights**
+- 🛍️ **Marketplace**: Discover and select from a diverse range of AI advisors
+- 📁 **Projects**: Organize conversations by business context and initiatives
+- ⚡ **Real-time**: Instant synchronization across all devices and users
+- ♿ **Accessible**: WCAG 2.1 AA compliant for inclusive user experience
+- 🔒 **Secure**: Enterprise-grade security with Clerk authentication

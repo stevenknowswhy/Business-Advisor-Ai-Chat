@@ -1,13 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { PlusIcon, ChatBubbleLeftIcon, UserGroupIcon, InformationCircleIcon, TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
+import { PlusIcon, ChatBubbleLeftIcon, FolderIcon, InformationCircleIcon, TrashIcon, PencilIcon, ShoppingBagIcon } from "@heroicons/react/24/outline";
 import { getAdvisorInitials, getAdvisorColor, formatMessageTime, type Advisor, type Conversation } from "~/lib/chat";
 import { AdvisorProfileModal } from "./AdvisorProfileModal";
 import { DeleteConversationDialog } from "./DeleteConversationDialog";
 import { AdvisorModal, type AdvisorFormData } from "./AdvisorModal";
 import { Tooltip } from "~/components/ui/Tooltip";
 import { AdvisorTooltipContent, ConversationTooltipContent } from "~/components/ui/TooltipContent";
+import { useRouter } from "next/navigation";
+import { ProjectCard } from "~/components/projects/ProjectCard";
+import { ProjectCreateModal } from "~/components/projects/ProjectCreateModal";
+import { useProjects } from "~/features/projects/hooks/useProjects";
 
 interface AdvisorRailProps {
   advisors: Advisor[];
@@ -36,7 +40,8 @@ export function AdvisorRail({
   onUpdateAdvisor,
   isCollapsed = false,
 }: AdvisorRailProps) {
-  const [activeTab, setActiveTab] = useState<"advisors" | "conversations">("advisors");
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<"projects" | "conversations">("projects");
   const [selectedAdvisorForProfile, setSelectedAdvisorForProfile] = useState<Advisor | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null);
@@ -47,6 +52,14 @@ export function AdvisorRail({
   const [isAdvisorModalOpen, setIsAdvisorModalOpen] = useState(false);
   const [advisorToEdit, setAdvisorToEdit] = useState<Advisor | null>(null);
   const [isAdvisorLoading, setIsAdvisorLoading] = useState(false);
+
+  // Project management state
+  const { projects, loading: projectsLoading, createProject, deleteProject, refetch: refetchProjects } = useProjects();
+  const [isProjectCreateModalOpen, setIsProjectCreateModalOpen] = useState(false);
+
+  const handleMarketplaceClick = () => {
+    router.push('/marketplace');
+  };
 
   const handleShowProfile = (advisor: Advisor) => {
     setSelectedAdvisorForProfile(advisor);
@@ -120,6 +133,27 @@ export function AdvisorRail({
     setAdvisorToEdit(null);
   };
 
+  // Project management handlers
+  const handleCreateProject = () => {
+    setIsProjectCreateModalOpen(true);
+  };
+
+  const handleProjectCreated = async () => {
+    await refetchProjects();
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    if (confirm("Are you sure you want to delete this project? This will archive the project but keep your conversations.")) {
+      try {
+        await deleteProject(projectId);
+        await refetchProjects();
+      } catch (error) {
+        console.error("Failed to delete project:", error);
+        alert("Failed to delete project. Please try again.");
+      }
+    }
+  };
+
   // If collapsed on desktop/tablet, show icon-only version
   if (isCollapsed) {
     return (
@@ -128,7 +162,7 @@ export function AdvisorRail({
           {/* Collapsed Header */}
           <div className="p-2 border-b border-gray-200 flex justify-center">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <UserGroupIcon className="w-5 h-5 text-white" />
+              <FolderIcon className="w-5 h-5 text-white" />
             </div>
           </div>
 
@@ -136,15 +170,15 @@ export function AdvisorRail({
           <div className="flex flex-col border-b border-gray-200">
             <button
               type="button"
-              onClick={() => setActiveTab("advisors")}
+              onClick={() => setActiveTab("projects")}
               className={`p-3 transition-colors ${
-                activeTab === "advisors"
+                activeTab === "projects"
                   ? "bg-blue-50 text-blue-600"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
               }`}
-              title="Advisors"
+              title="Projects"
             >
-              <UserGroupIcon className="w-5 h-5 mx-auto" />
+              <FolderIcon className="w-5 h-5 mx-auto" />
             </button>
             <button
               type="button"
@@ -162,30 +196,27 @@ export function AdvisorRail({
 
           {/* Collapsed Content */}
           <div className="flex-1 overflow-y-auto p-2">
-            {activeTab === "advisors" ? (
+            {activeTab === "projects" ? (
               <div className="space-y-2">
-                {advisors.map((advisor) => (
-                  <Tooltip
-                    key={advisor.id}
-                    content={<AdvisorTooltipContent advisor={advisor} />}
-                    delay={500}
+                {/* Marketplace Icon */}
+                <Tooltip
+                  content="Browse and connect with advisors in the Marketplace"
+                  delay={500}
+                >
+                  <button
+                    type="button"
+                    onClick={handleMarketplaceClick}
+                    className="w-full p-2 rounded-lg transition-colors text-gray-600 hover:bg-gray-100 hover:text-blue-600"
+                    aria-label="Open Marketplace"
                   >
-                    <button
-                      type="button"
-                      onClick={() => onAdvisorSelect(advisor.id)}
-                      className={`w-full p-2 rounded-lg transition-colors ${
-                        activeAdvisorId === advisor.id
-                          ? "bg-blue-100 text-blue-700"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
-                      aria-label={`Select advisor: ${advisor.name}`}
-                    >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium mx-auto ${getAdvisorColor(advisor.id)}`}>
-                        {getAdvisorInitials(advisor.name)}
-                      </div>
-                    </button>
-                  </Tooltip>
-                ))}
+                    <ShoppingBagIcon className="w-6 h-6 mx-auto" />
+                  </button>
+                </Tooltip>
+
+                {/* Projects will be shown here in future implementation */}
+                <div className="text-center text-gray-400 text-xs mt-4">
+                  Projects coming soon
+                </div>
               </div>
             ) : (
               <div className="space-y-2">
@@ -238,15 +269,15 @@ export function AdvisorRail({
       <div className="flex border-b border-gray-200">
         <button
           type="button"
-          onClick={() => setActiveTab("advisors")}
+          onClick={() => setActiveTab("projects")}
           className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === "advisors"
+            activeTab === "projects"
               ? "border-blue-500 text-blue-600 bg-blue-50"
               : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <UserGroupIcon className="w-4 h-4 inline mr-2" />
-          Advisors
+          <FolderIcon className="w-4 h-4 inline mr-2" />
+          Projects
         </button>
         <button
           type="button"
@@ -264,14 +295,13 @@ export function AdvisorRail({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        {activeTab === "advisors" ? (
-          <AdvisorsList
-            advisors={advisors}
-            activeAdvisorId={activeAdvisorId}
-            onAdvisorSelect={onAdvisorSelect}
-            onShowProfile={handleShowProfile}
-            onCreateAdvisor={handleCreateAdvisor}
-            onEditAdvisor={handleEditAdvisor}
+        {activeTab === "projects" ? (
+          <ProjectsList
+            onMarketplaceClick={handleMarketplaceClick}
+            projects={projects}
+            projectsLoading={projectsLoading}
+            onCreateProject={handleCreateProject}
+            onDeleteProject={handleDeleteProject}
           />
         ) : (
           <ConversationsList
@@ -313,6 +343,7 @@ export function AdvisorRail({
   );
 }
 
+// Legacy AdvisorsList - keeping for reference but not used in new Projects tab
 function AdvisorsList({
   advisors,
   activeAdvisorId,
@@ -506,6 +537,78 @@ function ConversationsList({
             )}
           </div>
         ))
+      )}
+    </div>
+  );
+}
+
+function ProjectsList({
+  onMarketplaceClick,
+  projects,
+  projectsLoading,
+  onCreateProject,
+  onDeleteProject,
+}: {
+  onMarketplaceClick: () => void;
+  projects: any[];
+  projectsLoading: boolean;
+  onCreateProject: () => void;
+  onDeleteProject: (projectId: string) => void;
+}) {
+  return (
+    <div className="p-2">
+      {/* Marketplace Button */}
+      <Tooltip
+        content="Browse and connect with advisors in the Marketplace"
+        delay={500}
+      >
+        <button
+          type="button"
+          onClick={onMarketplaceClick}
+          className="w-full p-3 rounded-lg mb-3 bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+        >
+          <ShoppingBagIcon className="w-4 h-4" />
+          <span className="text-sm font-medium">Marketplace</span>
+        </button>
+      </Tooltip>
+
+      {/* New Project Button */}
+      <button
+        type="button"
+        onClick={onCreateProject}
+        className="w-full p-3 rounded-lg mb-3 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors flex items-center justify-center space-x-2"
+      >
+        <PlusIcon className="w-4 h-4" />
+        <span className="text-sm font-medium">New Project</span>
+      </button>
+
+      {/* Projects List */}
+      {projectsLoading ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="p-3 bg-gray-50 rounded-lg animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          ))}
+        </div>
+      ) : projects.length === 0 ? (
+        <div className="text-center text-gray-400 text-sm mt-8">
+          <FolderIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p>No projects yet</p>
+          <p className="text-xs mt-1">Create your first project to organize your advisor conversations</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {projects.map((project) => (
+            <ProjectCard
+              key={project._id}
+              project={project}
+              onDelete={() => onDeleteProject(project._id)}
+              className="p-3 bg-white rounded-lg border border-gray-200 hover:border-gray-300"
+            />
+          ))}
+        </div>
       )}
     </div>
   );

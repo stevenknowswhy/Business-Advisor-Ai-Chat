@@ -1,4 +1,6 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 
 import {
@@ -21,22 +23,28 @@ export async function GET(
   console.log("=== GET CONVERSATION API START (CONVEX) ===");
 
   try {
+    // Authenticate user
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+    }
+
     const { id: conversationId } = await params;
     console.log("Getting conversation:", conversationId);
 
     const conversation = await getConversationById(conversationId);
 
     if (!conversation) {
-      return new Response("Conversation not found", { status: 404 });
+      return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
     }
 
     const formattedConversation = formatConversationWithMessagesForClient(conversation);
 
-    return Response.json(formattedConversation);
+    return NextResponse.json(formattedConversation);
 
   } catch (error) {
     console.error("Get conversation error:", error);
-    return new Response("Internal server error", { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -44,20 +52,43 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log("=== DELETE CONVERSATION API START (CONVEX) ===");
+  console.log("=== DELETE CONVERSATION API START (PRISMA) ===");
+  const db = new PrismaClient();
 
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+    }
+
     const { id: conversationId } = await params;
     console.log("Deleting conversation:", conversationId);
 
-    await deleteConversation(conversationId);
+    // Ownership check
+    const existing = await db.conversation.findUnique({ select: { id: true, userId: true }, where: { id: conversationId } });
+    if (!existing) {
+      return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+    }
+    if (existing.userId !== userId) {
+      return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 403 });
+    }
+
+    // Transactional delete: children then conversation
+    await db.$transaction([
+      db.message.deleteMany({ where: { conversationId } }),
+      db.threadSummary.deleteMany({ where: { conversationId } }),
+      db.advisorMemory.deleteMany({ where: { conversationId } }),
+      db.conversation.delete({ where: { id: conversationId } }),
+    ]);
 
     console.log("Conversation deleted successfully:", conversationId);
-    return new Response(null, { status: 204 });
+    return NextResponse.json(null, { status: 204 });
 
   } catch (error) {
     console.error("Delete conversation error:", error);
-    return new Response("Internal server error", { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } finally {
+    await db.$disconnect();
   }
 }
 
@@ -72,6 +103,12 @@ export async function PATCH(
   console.log("=== PATCH CONVERSATION API START (CONVEX) ===");
 
   try {
+    // Authenticate user
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+    }
+
     const { id: conversationId } = await params;
     console.log("Updating conversation:", conversationId);
 
@@ -88,7 +125,7 @@ export async function PATCH(
 
     console.log("Conversation updated successfully:", conversationId);
 
-    return Response.json({
+    return NextResponse.json({
       success: true,
       updated: updateData,
     }, { status: 200 });
@@ -98,14 +135,14 @@ export async function PATCH(
 
     // Handle validation errors
     if (error instanceof z.ZodError) {
-      return Response.json({
+      return NextResponse.json({
         error: "VALIDATION_ERROR",
         message: "Invalid request data",
         details: error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(", "),
       }, { status: 400 });
     }
 
-    return Response.json({
+    return NextResponse.json({
       error: "INTERNAL_ERROR",
       message: "An unexpected error occurred while updating the conversation"
     }, { status: 500 });

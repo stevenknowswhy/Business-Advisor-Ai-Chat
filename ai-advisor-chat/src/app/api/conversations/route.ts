@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
+import { auth } from "@clerk/nextjs/server";
 
 import {
   getUserConversations,
@@ -19,6 +20,12 @@ export async function GET(req: NextRequest) {
   console.log("Request URL:", req.url);
 
   try {
+    // Authenticate user
+    const { userId } = await auth();
+    if (!userId) {
+      return Response.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+    }
+
     const conversations = await getUserConversations();
     console.log("Retrieved conversations from Convex:", conversations.length);
 
@@ -37,6 +44,12 @@ export async function POST(req: NextRequest) {
   console.log("=== CREATE CONVERSATION API START (CONVEX) ===");
 
   try {
+    // Authenticate user
+    const { userId } = await auth();
+    if (!userId) {
+      return Response.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+    }
+
     const body = await req.json();
     const { title, advisorId } = createConversationSchema.parse(body);
 

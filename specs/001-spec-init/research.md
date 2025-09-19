@@ -59,3 +59,46 @@ This research document captures decisions and trade-offs for Phase 0: choosing C
 1. Prototype a Convex action that creates a Conversation and writes messages; confirm subscription behavior.
 2. Prototype UploadThing avatar upload + Convex document write.
 3. Prototype a Node streaming fallback that writes partial messages to Convex for long responses.
+
+
+## Addendum — Research for Advisor Wizard & One-Click Teams
+
+### Advisor Wizard implementation
+
+- Forms & validation: react-hook-form + @hookform/resolvers with Zod schemas; per-step zodRefine where fields depend on prior steps
+- Stepper patterns: visually persistent step nav with aria-current on active step; allow linear progression only when current step is valid
+- Error UX: on submit failure, move focus to first invalid field; include aria-live region summarizing errors
+- Persistence: localStorage draft auto-save every 30s with versioned key; clear on successful creation
+- Accessibility: ensure all interactive controls (icons) have accessible names; follow WCAG 2.1 AA for contrast and focus rings
+
+### One-Click Teams: action semantics
+
+- Action: teams.createFromTemplate(templateId)
+  - Validates Clerk auth via Convex ctx.auth; returns { ok, advisorIds }
+  - Idempotency: accept optional clientIdempotencyKey; if provided, de-duplicate within 10 minutes using a transient KV record
+  - Rate limit: per-user limiter (e.g., max 3 team spawns/min) to protect backend
+  - Telemetry: log templateId, count, duration for adoption metrics
+
+### Data decisions
+
+- Prefer code-defined team templates (versioned) for speed; optionally mirror to Convex for admin UI later
+- Store templateId/version on created advisors (metadata) and in userAdvisors for provenance
+- Add advisors.by_owner_handle to ensure unique per-user handles for @mentions
+
+### Query hooks & performance
+
+- Use Convex React query hooks with skip parameter rather than conditional returns to satisfy Rules of Hooks
+- Paginate marketplace queries; prefetch on route hover via TanStack Query to reduce perceived latency
+- Optimistic updates for selection/deselection; reconcile on server response
+
+### Auth & security
+
+- Clerk + Convex: ensure JWT template is named exactly "convex" with audience "convex" and issuer matching Clerk domain; include standard claims
+- Server-side validation mirrors client Zod to prevent tampered payloads
+- Enforce ownerId checks on advisors.listMine and selection mutations
+
+### Testing notes
+
+- Unit: mapping functions form<->advisor JSON; handle generator; schema guards
+- Integration: teams.createFromTemplate happy path and idempotency; advisors.uploadAdvisorJSON validation errors
+- E2E: keyboard-only wizard completion; screen reader labels verified via axe-core

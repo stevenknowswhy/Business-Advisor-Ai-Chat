@@ -17,6 +17,75 @@ const config = {
     ignoreDuringBuilds: true,
   },
 
+  // Image optimization configuration
+  images: {
+    // Configure image domains that can be optimized
+    domains: [
+      'localhost', // For local development
+      'vercel.com', // For Vercel deployments
+      'openrouter.ai', // For AI model images
+    ],
+
+    // Image formats to support
+    formats: ['image/webp', 'image/avif'],
+
+    // Device sizes for responsive images
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+
+    // Image sizes for responsive images
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+
+    // Minimum cache TTL in seconds
+    minimumCacheTTL: 60,
+
+    // Enable dangerous SVG loader if needed
+    dangerouslyAllowSVG: true,
+
+    // Content security policy for images
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+  },
+
+  // Compression configuration
+  compress: true,
+
+  // Webpack configuration for additional optimizations
+  webpack: (config, { dev, isServer }) => {
+    // Optimize bundle size in production
+    if (!dev && !isServer) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+            priority: 10,
+          },
+          common: {
+            name: 'common',
+            minChunks: 2,
+            chunks: 'all',
+            priority: 5,
+          },
+        },
+      };
+    }
+
+    return config;
+  },
+
+  // Experimental features
+  experimental: {
+    // Enable optimized package imports
+    optimizePackageImports: [
+      '@heroicons/react',
+      'framer-motion',
+      'clsx',
+      'react',
+      'react-dom',
+    ],
+  },
+
   // Security headers including CSP
   async headers() {
     const isDev = process.env.NODE_ENV === 'development';

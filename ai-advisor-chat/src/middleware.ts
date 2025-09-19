@@ -10,11 +10,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhooks(.*)",
   "/api/health(.*)",
   "/api/test-convex(.*)",
-  "/api/advisors(.*)", // Temporarily public during Convex migration
-  "/api/conversations(.*)", // Temporarily public during Convex migration
-  "/api/messages(.*)", // Temporarily public during Convex migration
-  "/api/chat(.*)", // Temporarily public during Convex migration
-  // Removed: "/api/chat-minimal(.*)" - now requires authentication
+  "/api/advisors(.*)", // Public: getting available advisors
   "/api/test-simple(.*)",
   "/api/debug-env(.*)",
   "/api/debug-auth(.*)",
@@ -22,6 +18,9 @@ const isPublicRoute = createRouteMatcher([
   "/api/test-auth-flow(.*)",
   "/api/clerk-diagnostic(.*)",
   "/api/csp-report(.*)",
+  "/api/payments/webhook(.*)", // Stripe webhooks
+  "/api/subscriptions(.*)", // Subscription management
+  "/api/roles(.*)", // Role management
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

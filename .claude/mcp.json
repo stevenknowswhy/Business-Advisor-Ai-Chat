@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "mcp-github": {
+      "command": "curl",
+      "args": ["-X", "POST", "http://localhost:8080/github/tools/call", "-H", "Content-Type: application/json", "-d", '{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "%s", "arguments": %JSON}}'],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "mcp-filesystem": {
+      "command": "curl",
+      "args": ["-X", "POST", "http://localhost:8080/filesystem/tools/call", "-H", "Content-Type: application/json", "-d", '{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "%s", "arguments": %JSON}}']
+    },
+    "mcp-shadcn": {
+      "command": "curl",
+      "args": ["-X", "POST", "http://localhost:8080/shadcn/tools/call", "-H", "Content-Type: application/json", "-d", '{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "%s", "arguments": %JSON}}']
+    },
+    "mcp-playwright": {
+      "command": "curl",
+      "args": ["-X", "POST", "http://localhost:8080/playwright/tools/call", "-H", "Content-Type: application/json", "-d", '{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "%s", "arguments": %JSON}}'],
+      "env": {
+        "PLAYWRIGHT_HOST": "0.0.0.0",
+        "PLAYWRIGHT_PORT": "3004",
+        "HEADLESS": "true",
+        "ALLOWED_DOMAINS": "github.com,localhost,127.0.0.1,example.com"
+      }
+    }
+  }
+}

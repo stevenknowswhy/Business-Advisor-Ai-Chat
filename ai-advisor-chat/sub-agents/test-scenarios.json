@@ -1,0 +1,355 @@
+{
+  "name": "AI Advisor App Test Scenarios",
+  "version": "1.0.0",
+  "description": "Comprehensive E2E test scenarios for AI Advisor App and Blog",
+  "environments": {
+    "development": {
+      "mainApp": "http://localhost:3000",
+      "blog": "http://localhost:3001",
+      "admin": "http://localhost:3000/admin"
+    },
+    "production": {
+      "mainApp": "https://app.yourdomain.com",
+      "blog": "https://blog.yourdomain.com",
+      "admin": "https://app.yourdomain.com/admin"
+    }
+  },
+  "testCredentials": {
+    "testUser": {
+      "email": "user@test.com",
+      "password": "test123"
+    },
+    "testAdmin": {
+      "email": "admin@test.com",
+      "password": "admin123"
+    }
+  },
+  "mainAppTests": [
+    {
+      "id": "homepage-001",
+      "name": "Homepage Load and Responsiveness",
+      "url": "/",
+      "type": "navigation",
+      "priority": "critical",
+      "checks": [
+        "page_loads_within_3s",
+        "no_console_errors",
+        "responsive_design",
+        "navigation_links_work",
+        "advisor_cards_display"
+      ],
+      "expectedResults": {
+        "loadTime": "< 3000ms",
+        "consoleErrors": 0,
+        "brokenLinks": 0
+      }
+    },
+    {
+      "id": "auth-001",
+      "name": "User Registration Flow",
+      "url": "/signup",
+      "type": "form",
+      "priority": "critical",
+      "checks": [
+        "form_validation",
+        "email_field_works",
+        "password_field_works",
+        "successful_registration",
+        "redirects_to_dashboard"
+      ],
+      "formData": {
+        "email": "newuser@test.com",
+        "password": "newpassword123",
+        "confirmPassword": "newpassword123"
+      }
+    },
+    {
+      "id": "auth-002",
+      "name": "User Login Flow",
+      "url": "/login",
+      "type": "form",
+      "priority": "critical",
+      "checks": [
+        "form_validation",
+        "authentication_works",
+        "redirects_to_dashboard",
+        "session_persistence"
+      ],
+      "formData": {
+        "email": "user@test.com",
+        "password": "test123"
+      }
+    },
+    {
+      "id": "chat-001",
+      "name": "Chat Interface Functionality",
+      "url": "/chat",
+      "type": "interaction",
+      "priority": "high",
+      "checks": [
+        "chat_interface_loads",
+        "advisor_selection_works",
+        "message_send_works",
+        "message_history_loads",
+        "typing_indicator_works"
+      ],
+      "requiresAuth": true
+    },
+    {
+      "id": "marketplace-001",
+      "name": "Marketplace Browse and Filter",
+      "url": "/marketplace",
+      "type": "interaction",
+      "priority": "high",
+      "checks": [
+        "marketplace_loads",
+        "advisor_cards_display",
+        "filter_functionality",
+        "search_functionality",
+        "pagination_works"
+      ]
+    },
+    {
+      "id": "marketplace-002",
+      "name": "Advisor Profile View",
+      "url": "/marketplace/advisor/{advisorId}",
+      "type": "navigation",
+      "priority": "medium",
+      "checks": [
+        "profile_loads",
+        "advisor_info_displays",
+        "reviews_load",
+        "pricing_displays",
+        "contact_options_work"
+      ]
+    },
+    {
+      "id": "payment-001",
+      "name": "Stripe Checkout Flow",
+      "url": "/checkout",
+      "type": "form",
+      "priority": "high",
+      "checks": [
+        "checkout_page_loads",
+        "stripe_integration_works",
+        "payment_form_validates",
+        "test_payment_processes",
+        "confirmation_page_displays"
+      ],
+      "testMode": true,
+      "requiresAuth": true
+    },
+    {
+      "id": "dashboard-001",
+      "name": "User Dashboard",
+      "url": "/dashboard",
+      "type": "navigation",
+      "priority": "medium",
+      "checks": [
+        "dashboard_loads",
+        "user_info_displays",
+        "recent_chats_load",
+        "subscription_status_shows",
+        "settings_accessible"
+      ],
+      "requiresAuth": true
+    }
+  ],
+  "blogTests": [
+    {
+      "id": "blog-001",
+      "name": "Blog Homepage",
+      "url": "/",
+      "type": "navigation",
+      "priority": "high",
+      "checks": [
+        "blog_loads_within_3s",
+        "no_console_errors",
+        "recent_posts_display",
+        "categories_work",
+        "search_functionality"
+      ]
+    },
+    {
+      "id": "blog-002",
+      "name": "Blog Post View",
+      "url": "/posts/{postId}",
+      "type": "navigation",
+      "priority": "high",
+      "checks": [
+        "post_loads",
+        "content_displays",
+        "author_info_shows",
+        "comment_section_works",
+        "like_functionality",
+        "social_sharing_works"
+      ]
+    },
+    {
+      "id": "blog-003",
+      "name": "Category Pages",
+      "url": "/category/{category}",
+      "type": "navigation",
+      "priority": "medium",
+      "checks": [
+        "category_page_loads",
+        "filtered_posts_display",
+        "category_info_shows",
+        "pagination_works"
+      ]
+    },
+    {
+      "id": "cms-001",
+      "name": "CMS Admin Login",
+      "url": "/admin",
+      "type": "form",
+      "priority": "high",
+      "checks": [
+        "admin_login_page_loads",
+        "authentication_works",
+        "dashboard_loads",
+        "content_management_accessible"
+      ],
+      "formData": {
+        "email": "admin@test.com",
+        "password": "admin123"
+      }
+    },
+    {
+      "id": "cms-002",
+      "name": "CMS Post Creation",
+      "url": "/admin/posts/new",
+      "type": "form",
+      "priority": "medium",
+      "checks": [
+        "post_editor_loads",
+        "title_field_works",
+        "content_editor_works",
+        "featured_image_upload",
+        "category_selection",
+        "post_publishes"
+      ],
+      "requiresAuth": true,
+      "testData": {
+        "title": "Test Post for E2E",
+        "content": "This is a test post created during E2E testing.",
+        "category": "technology"
+      }
+    }
+  ],
+  "rbacTests": [
+    {
+      "id": "rbac-001",
+      "name": "User Role Restrictions",
+      "url": "/admin",
+      "type": "authorization",
+      "priority": "critical",
+      "userRole": "user",
+      "expectedResult": "access_denied",
+      "checks": [
+        "redirect_to_login",
+        "error_message_shows",
+        "cannot_access_admin_functions"
+      ]
+    },
+    {
+      "id": "rbac-002",
+      "name": "Admin Role Access",
+      "url": "/admin",
+      "type": "authorization",
+      "priority": "critical",
+      "userRole": "admin",
+      "expectedResult": "access_granted",
+      "checks": [
+        "admin_dashboard_loads",
+        "admin_functions_accessible",
+        "no_access_errors"
+      ]
+    },
+    {
+      "id": "rbac-003",
+      "name": "Premium User Features",
+      "url": "/dashboard/premium",
+      "type": "authorization",
+      "priority": "medium",
+      "userRole": "premium",
+      "expectedResult": "access_granted",
+      "checks": [
+        "premium_features_load",
+        "no_access_errors",
+        "premium_ui_elements_show"
+      ]
+    }
+  ],
+  "accessibilityTests": [
+    {
+      "id": "a11y-001",
+      "name": "Homepage Accessibility",
+      "url": "/",
+      "type": "accessibility",
+      "priority": "high",
+      "checks": [
+        "proper_heading_structure",
+        "alt_text_on_images",
+        "keyboard_navigation",
+        "color_contrast",
+        "screen_reader_friendly"
+      ]
+    },
+    {
+      "id": "a11y-002",
+      "name": "Form Accessibility",
+      "url": "/login",
+      "type": "accessibility",
+      "priority": "high",
+      "checks": [
+        "form_labels_present",
+        "error_messages_accessible",
+        "focus_management",
+        "aria_attributes"
+      ]
+    }
+  ],
+  "performanceTests": [
+    {
+      "id": "perf-001",
+      "name": "Homepage Performance",
+      "url": "/",
+      "type": "performance",
+      "priority": "medium",
+      "thresholds": {
+        "loadTime": "< 3000ms",
+        "firstContentfulPaint": "< 1500ms",
+        "largestContentfulPaint": "< 2500ms",
+        "cumulativeLayoutShift": "< 0.1"
+      }
+    },
+    {
+      "id": "perf-002",
+      "name": "Chat Interface Performance",
+      "url": "/chat",
+      "type": "performance",
+      "priority": "medium",
+      "thresholds": {
+        "loadTime": "< 2000ms",
+        "firstContentfulPaint": "< 1000ms",
+        "interactionToNextPaint": "< 100ms"
+      }
+    }
+  ],
+  "crossBrowserTests": {
+    "browsers": ["chrome", "firefox", "safari"],
+    "viewports": [
+      {"width": 1920, "height": 1080},
+      {"width": 1366, "height": 768},
+      {"width": 375, "height": 667}
+    ],
+    "criticalTests": ["homepage-001", "auth-001", "auth-002"]
+  },
+  "parallelExecution": {
+    "maxConcurrent": 4,
+    "timeout": 30000,
+    "retryAttempts": 2,
+    "failureThreshold": 0.1
+  }
+}

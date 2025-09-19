@@ -1,6 +1,12 @@
 import { streamText, generateText } from "ai";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+
+// Security middleware
+import { securityMiddleware, addSecurityHeaders } from "@/lib/security";
+import { applyRateLimit } from "@/lib/rateLimiter";
+import { validateRequestBody } from "@/lib/validation";
+import { validateChatRequestSchema } from "@/lib/validation";
 
 // Replace Prisma imports with Convex imports for migration
 import { auth, currentUser } from "@clerk/nextjs/server";
@@ -20,17 +26,6 @@ import {
 
 // Minimal, robust auth helper for Convex migration
 async function debugRequireUser() {
-  // For migration testing, return a mock user
-  // TODO: Re-enable authentication after migration is complete
-  return {
-    id: "migration-test-user",
-    email: "test@example.com",
-    name: "Migration Test User",
-    image: null,
-    plan: "free",
-  };
-
-  /* Original authentication code - re-enable after migration:
   const { userId } = await auth();
   if (!userId) throw new Error("User not authenticated");
   const clerkUser = await currentUser();
@@ -43,7 +38,6 @@ async function debugRequireUser() {
     image: clerkUser.imageUrl || null,
     plan: "free",
   };
-  */
 }
 
 import { generateSystemPrompt, generateConversationContext, generateUserMessage, extractMentions } from "~/server/llm/prompt";
@@ -75,6 +69,31 @@ export async function POST(req: NextRequest) {
   console.log("- DATABASE_URL present:", !!process.env.DATABASE_URL);
 
   try {
+    console.log("Step 0: Applying security middleware...");
+    // Apply security middleware
+    const securityResult = await securityMiddleware(req);
+    if (securityResult) {
+      return securityResult;
+    }
+
+    console.log("Step 0a: Applying rate limiting...");
+    // Apply rate limiting for chat endpoints (stricter limits)
+    const rateLimitResult = await applyRateLimit(req, 'chat');
+    if (rateLimitResult) {
+      return rateLimitResult;
+    }
+
+    console.log("Step 0b: Validating request body...");
+    // Validate request body
+    const validationResult = await validateRequestBody(req, validateChatRequestSchema);
+    if (!validationResult.success) {
+      const errorResponse = NextResponse.json(
+        { error: validationResult.error },
+        { status: 400 }
+      );
+      return addSecurityHeaders(req, errorResponse);
+    }
+
     console.log("Step 1: Authenticating user...");
     // Authenticate user
     let user;
@@ -91,44 +110,17 @@ export async function POST(req: NextRequest) {
       }, { status: 401 });
     }
 
-    console.log("Step 2: Parsing request body...");
-    // Parse and validate request
-    let body, messages, conversationId, advisorId;
-    try {
-      body = await req.json();
-      console.log("Step 2a: Raw body received:", JSON.stringify(body, null, 2));
+    console.log("Step 2: Processing validated request...");
+    // Use validated request body
+    const validatedData = validationResult.data;
+    const message = validatedData.message;
+    const conversationId = validatedData.conversationId;
+    const advisorId = validatedData.advisorId;
 
-      const parsed = chatRequestSchema.parse(body);
-      messages = parsed.messages;
-      conversationId = parsed.conversationId;
-      advisorId = parsed.advisorId;
-
-      console.log("Step 2 SUCCESS: Request parsed and validated");
-      console.log("- Messages count:", messages.length);
-      console.log("- Conversation ID:", conversationId);
-      console.log("- Advisor ID:", advisorId);
-    } catch (parseError: any) {
-      console.error("Step 2 FAILED: Request parsing error:", parseError.message);
-      console.error("Parse error stack:", parseError.stack);
-      return Response.json({
-        error: "INVALID_REQUEST",
-        message: "Invalid request format",
-        details: parseError.message
-      }, { status: 400 });
-    }
-
-    // Get the latest user message
-    const userMessages = messages.filter(m => m.role === "user");
-    const latestMessage = userMessages[userMessages.length - 1];
-
-    if (!latestMessage) {
-      return Response.json({
-        error: "NO_USER_MESSAGE",
-        message: "No user message found in request"
-      }, { status: 400 });
-    }
-
-    const message = latestMessage.content;
+    console.log("Step 2 SUCCESS: Request validated and processed");
+    console.log("- Message:", message);
+    console.log("- Conversation ID:", conversationId);
+    console.log("- Advisor ID:", advisorId);
 
     console.log("Step 3: Getting advisors and processing mentions (CONVEX)...");
     // Get available advisors for mention parsing
@@ -541,10 +533,14 @@ export async function POST(req: NextRequest) {
       }, { status: 401 });
     }
 
-    return Response.json({
-      error: "INTERNAL_ERROR",
-      message: "An unexpected error occurred. Please try again.",
-      code: 500
-    }, { status: 500 });
+    const errorResponse = NextResponse.json(
+      {
+        error: "INTERNAL_ERROR",
+        message: "An unexpected error occurred. Please try again.",
+        code: 500
+      },
+      { status: 500 }
+    );
+    return addSecurityHeaders(req, errorResponse);
   }
 }

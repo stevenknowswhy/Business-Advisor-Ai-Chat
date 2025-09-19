@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
+import { auth } from "@clerk/nextjs/server";
 
 import {
   getMessageById,
@@ -24,6 +25,12 @@ export async function PATCH(
   console.log("=== UPDATE MESSAGE API START (CONVEX) ===");
 
   try {
+    // Authenticate user
+    const { userId } = await auth();
+    if (!userId) {
+      return Response.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+    }
+
     const { id: messageId } = await params;
     console.log("Message ID to update:", messageId);
 
@@ -116,6 +123,12 @@ export async function DELETE(
   console.log("=== DELETE MESSAGE API START (CONVEX) ===");
 
   try {
+    // Authenticate user
+    const { userId } = await auth();
+    if (!userId) {
+      return Response.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+    }
+
     const { id: messageId } = await params;
     console.log("Message ID to delete:", messageId);
 

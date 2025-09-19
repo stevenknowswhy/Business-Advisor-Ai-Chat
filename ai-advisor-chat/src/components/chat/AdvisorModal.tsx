@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { XMarkIcon, CheckIcon, ExclamationTriangleIcon, PhotoIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, CheckIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { type Advisor } from "~/lib/chat";
+import { ImageUpload } from "~/components/uploads/ImageUpload";
 
 interface AdvisorModalProps {
   isOpen: boolean;
@@ -17,7 +18,7 @@ export interface AdvisorFormData {
   lastName: string;
   title: string;
   jsonConfiguration: string;
-  image?: File | string; // File for new upload, string URL for existing
+  imageUrl?: string; // URL of uploaded image
 }
 
 export function AdvisorModal({ isOpen, onClose, onSave, advisor, isLoading }: AdvisorModalProps) {
@@ -26,15 +27,11 @@ export function AdvisorModal({ isOpen, onClose, onSave, advisor, isLoading }: Ad
     lastName: advisor?.name?.split(' ').slice(1).join(' ') || "",
     title: advisor?.title || "",
     jsonConfiguration: advisor ? JSON.stringify(advisor, null, 2) : "",
-    image: advisor?.image || undefined,
+    imageUrl: advisor?.image || undefined,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [jsonError, setJsonError] = useState<string>("");
-  const [imagePreview, setImagePreview] = useState<string | null>(
-    typeof formData.image === "string" ? formData.image : null
-  );
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateJSON = () => {
     if (!formData.jsonConfiguration.trim()) {
@@ -69,31 +66,13 @@ export function AdvisorModal({ isOpen, onClose, onSave, advisor, isLoading }: Ad
     return Object.keys(newErrors).length === 0 && validateJSON();
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setErrors(prev => ({ ...prev, image: "Please select a valid image file" }));
-        return;
-      }
+  const handleImageChange = (imageUrl: string) => {
+    setFormData(prev => ({ ...prev, imageUrl }));
+    setErrors(prev => ({ ...prev, image: "" }));
+  };
 
-      // Validate file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors(prev => ({ ...prev, image: "Image must be less than 5MB" }));
-        return;
-      }
-
-      setFormData(prev => ({ ...prev, image: file }));
-      setErrors(prev => ({ ...prev, image: "" }));
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleImageRemove = () => {
+    setFormData(prev => ({ ...prev, imageUrl: undefined }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -112,9 +91,8 @@ export function AdvisorModal({ isOpen, onClose, onSave, advisor, isLoading }: Ad
         lastName: "",
         title: "",
         jsonConfiguration: "",
-        image: undefined,
+        imageUrl: undefined,
       });
-      setImagePreview(null);
       setErrors({});
       setJsonError("");
     } catch (error) {
@@ -131,9 +109,8 @@ export function AdvisorModal({ isOpen, onClose, onSave, advisor, isLoading }: Ad
       lastName: advisor?.name?.split(' ').slice(1).join(' ') || "",
       title: advisor?.title || "",
       jsonConfiguration: advisor ? JSON.stringify(advisor, null, 2) : "",
-      image: advisor?.image || undefined,
+      imageUrl: advisor?.image || undefined,
     });
-    setImagePreview(typeof advisor?.image === "string" ? advisor.image : null);
     setErrors({});
     setJsonError("");
   };
@@ -234,43 +211,17 @@ export function AdvisorModal({ isOpen, onClose, onSave, advisor, isLoading }: Ad
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Advisor Avatar (Optional)
             </label>
-            <div className="flex items-center space-x-4">
-              {imagePreview && (
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-16 h-16 rounded-full object-cover border border-gray-300"
-                />
-              )}
-              <div className="flex-1">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImageUpload}
-                  accept="image/*"
-                  className="hidden"
-                  disabled={isLoading}
-                  aria-label="Upload advisor avatar image"
-                  title="Select an image file for the advisor avatar"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                  disabled={isLoading}
-                >
-                  <PhotoIcon className="w-5 h-5 text-gray-400" />
-                  <span className="text-sm text-gray-700">
-                    {imagePreview ? "Change Image" : "Upload Image"}
-                  </span>
-                </button>
-              </div>
-            </div>
-            {errors.image && (
-              <p className="mt-1 text-sm text-red-600">{errors.image}</p>
-            )}
+            <ImageUpload
+              currentImage={formData.imageUrl}
+              onImageChange={handleImageChange}
+              onImageRemove={handleImageRemove}
+              endpoint="advisor-avatar"
+              showPreview={false}
+              className="w-32 h-32"
+              placeholder="Upload avatar"
+            />
             <p className="mt-1 text-xs text-gray-500">
-              Supported formats: JPG, PNG, WebP. Max size: 5MB.
+              Click to upload advisor avatar. Max size: 5MB, Max dimension: 800x800px.
             </p>
           </div>
 

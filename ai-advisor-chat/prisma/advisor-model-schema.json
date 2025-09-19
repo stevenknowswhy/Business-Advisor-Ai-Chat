@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Advisor Model Configuration Schema",
+  "description": "Schema for defining AI model availability and recommendations for advisors",
+  "type": "object",
+  "properties": {
+    "modelConfiguration": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": ["Technical", "Business", "Creative", "Customer Service", "Research", "Strategy"],
+          "description": "Primary category of the advisor for model recommendations"
+        },
+        "defaultModel": {
+          "type": "string",
+          "description": "Default model used for this advisor"
+        },
+        "tierAvailability": {
+          "type": "object",
+          "properties": {
+            "free": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Models available to free tier users"
+            },
+            "regular": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Models available to regular tier users"
+            },
+            "pro": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Models available to pro tier users"
+            }
+          },
+          "required": ["free", "regular", "pro"],
+          "description": "Model availability by user tier"
+        },
+        "modelRecommendations": {
+          "type": "object",
+          "properties": {
+            "optimal": {
+              "type": "string",
+              "description": "Recommended optimal model for this advisor"
+            },
+            "reasoning": {
+              "type": "string",
+              "description": "Explanation for why this model is optimal"
+            },
+            "alternatives": {
+              "type": "object",
+              "properties": {
+                "budget": {
+                  "type": "string",
+                  "description": "Budget-friendly alternative model"
+                },
+                "premium": {
+                  "type": "string",
+                  "description": "Premium/high-performance alternative model"
+                }
+              },
+              "required": ["budget", "premium"]
+            }
+          },
+          "required": ["optimal", "reasoning", "alternatives"]
+        }
+      },
+      "required": ["category", "defaultModel", "tierAvailability", "modelRecommendations"]
+    }
+  },
+  "required": ["modelConfiguration"]
+}

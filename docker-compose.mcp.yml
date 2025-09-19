@@ -1,0 +1,233 @@
+version: '3.8'
+
+services:
+  # MCP GitHub Server
+  mcp-github:
+    build:
+      context: ./mcp-servers/github
+      dockerfile: Dockerfile
+    container_name: mcp-github-server
+    ports:
+      - "3001:3001"
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - NODE_ENV=production
+      - PORT=3001
+    volumes:
+      - ./mcp-servers/github/data:/app/data
+      - ./mcp-servers/github/logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MCP Filesystem Server
+  mcp-filesystem:
+    build:
+      context: ./mcp-servers/filesystem
+      dockerfile: Dockerfile
+    container_name: mcp-filesystem-server
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - WORKSPACE_ROOT=/app/workspace
+    volumes:
+      - ./:/app/workspace:ro
+      - ./mcp-servers/filesystem/logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3002/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MCP Shadcn UI Server
+  mcp-shadcn:
+    build:
+      context: ./mcp-servers/shadcn
+      dockerfile: Dockerfile
+    container_name: mcp-shadcn-server
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+      - SHADCN_API_BASE=https://www.shadcn.io/api/mcp
+    volumes:
+      - ./mcp-servers/shadcn/data:/app/data
+      - ./mcp-servers/shadcn/logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3003/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MCP Playwright Server
+  mcp-playwright:
+    build:
+      context: ./mcp-servers/playwright
+      dockerfile: Dockerfile
+    container_name: mcp-playwright-server
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=production
+      - PORT=3004
+      - PLAYWRIGHT_HOST=0.0.0.0
+      - PLAYWRIGHT_PORT=3004
+      - HEADLESS=true
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      - ALLOWED_DOMAINS=${ALLOWED_DOMAINS}
+    volumes:
+      - ./screenshots:/app/screenshots
+      - ./mcp-servers/playwright/logs:/app/logs
+      - /dev/shm:/dev/shm
+    restart: unless-stopped
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3004/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    shm_size: 2gb
+
+  # MCP Database Server (PostgreSQL for persistent data)
+  mcp-database:
+    image: postgres:15-alpine
+    container_name: mcp-postgres
+    environment:
+      - POSTGRES_DB=mcp_db
+      - POSTGRES_USER=mcp_user
+      - POSTGRES_PASSWORD=${MCP_DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - mcp_postgres_data:/var/lib/postgresql/data
+      - ./mcp-servers/database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    restart: unless-stopped
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mcp_user -d mcp_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MCP Redis Cache
+  mcp-redis:
+    image: redis:7-alpine
+    container_name: mcp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - mcp_redis_data:/data
+      - ./mcp-servers/redis/redis.conf:/etc/redis/redis.conf:ro
+    command: redis-server /etc/redis/redis.conf
+    restart: unless-stopped
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MCP Proxy/Load Balancer (Nginx)
+  mcp-proxy:
+    image: nginx:alpine
+    container_name: mcp-proxy
+    ports:
+      - "8080:80"
+    volumes:
+      - ./mcp-servers/proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./mcp-servers/proxy/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - mcp-github
+      - mcp-filesystem
+      - mcp-shadcn
+    restart: unless-stopped
+    networks:
+      - mcp-network
+
+  # MCP Monitoring (Prometheus + Grafana)
+  mcp-monitoring:
+    image: prom/prometheus:latest
+    container_name: mcp-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./mcp-servers/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - mcp_monitoring_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - mcp-network
+
+  mcp-grafana:
+    image: grafana/grafana:latest
+    container_name: mcp-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - mcp_grafana_data:/var/lib/grafana
+      - ./mcp-servers/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - mcp-monitoring
+    restart: unless-stopped
+    networks:
+      - mcp-network
+
+  # MCP Documentation Server
+  mcp-docs:
+    image: nginx:alpine
+    container_name: mcp-docs
+    ports:
+      - "8081:80"
+    volumes:
+      - ./mcp-servers/docs:/usr/share/nginx/html:ro
+    restart: unless-stopped
+    networks:
+      - mcp-network
+
+volumes:
+  mcp_postgres_data:
+    driver: local
+  mcp_redis_data:
+    driver: local
+  mcp_monitoring_data:
+    driver: local
+  mcp_grafana_data:
+    driver: local
+
+networks:
+  mcp-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+    name: mcp-network

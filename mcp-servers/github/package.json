@@ -1,0 +1,25 @@
+{
+  "name": "mcp-github-server",
+  "version": "1.0.0",
+  "description": "MCP GitHub server for AI Advisor App",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@octokit/rest": "^20.0.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["mcp", "github", "ai", "advisor"],
+  "author": "AI Advisor App Team",
+  "license": "MIT"
+}

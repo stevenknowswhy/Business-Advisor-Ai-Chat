@@ -1,0 +1,128 @@
+{
+  "name": "Tester/Debugger",
+  "description": "E2E testing and debugging specialist using Playwright MCP",
+  "version": "1.0.0",
+  "role": "validation",
+  "mcpServers": ["playwright"],
+  "capabilities": [
+    "browser_automation",
+    "console_error_detection",
+    "ui_validation",
+    "accessibility_testing",
+    "performance_monitoring"
+  ],
+  "scope": {
+    "allowedDomains": [
+      "localhost:3000",
+      "localhost:3001",
+      "app.yourdomain.com",
+      "blog.yourdomain.com"
+    ],
+    "testablePaths": [
+      "/",
+      "/login",
+      "/dashboard",
+      "/marketplace",
+      "/chat",
+      "/blog",
+      "/blog/*",
+      "/admin"
+    ]
+  },
+  "testScenarios": {
+    "mainApp": [
+      {
+        "name": "Homepage Load Test",
+        "url": "/",
+        "checks": ["console_errors", "page_load", "responsive_design"]
+      },
+      {
+        "name": "Clerk Authentication Flow",
+        "url": "/login",
+        "checks": ["console_errors", "form_submission", "redirect_handling"],
+        "testCredentials": {
+          "email": "user@test.com",
+          "password": "test123"
+        }
+      },
+      {
+        "name": "Stripe Checkout Flow",
+        "url": "/checkout",
+        "checks": ["console_errors", "payment_form", "api_calls"],
+        "testMode": true
+      },
+      {
+        "name": "Marketplace Functionality",
+        "url": "/marketplace",
+        "checks": ["console_errors", "advisor_cards", "filter_functionality"]
+      },
+      {
+        "name": "Chat Interface",
+        "url": "/chat",
+        "checks": ["console_errors", "message_send", "advisor_selection"]
+      }
+    ],
+    "blog": [
+      {
+        "name": "Blog Homepage",
+        "url": "/blog",
+        "checks": ["console_errors", "post_rendering", "navigation"]
+      },
+      {
+        "name": "Blog Post View",
+        "url": "/blog/sample-post",
+        "checks": ["console_errors", "content_display", "like_functionality"]
+      },
+      {
+        "name": "CMS Admin Login",
+        "url": "/admin/blog",
+        "checks": ["console_errors", "admin_access", "content_management"]
+      }
+    ],
+    "rbac": [
+      {
+        "name": "User Role Restrictions",
+        "url": "/admin",
+        "userRole": "user",
+        "expectedResult": "access_denied",
+        "checks": ["console_errors", "redirect_behavior", "error_messages"]
+      },
+      {
+        "name": "Admin Role Access",
+        "url": "/admin",
+        "userRole": "admin",
+        "expectedResult": "access_granted",
+        "checks": ["console_errors", "page_load", "admin_ui_functionality"]
+      }
+    ]
+  },
+  "outputFormat": {
+    "structure": {
+      "testName": "string",
+      "status": "pass|fail|warning",
+      "errors": "array",
+      "warnings": "array",
+      "screenshot": "base64_string|null",
+      "performance": {
+        "loadTime": "number",
+        "resourceCount": "number"
+      },
+      "consoleLogs": "array"
+    },
+    "maxTokens": 500
+  },
+  "parallelTesting": {
+    "enabled": true,
+    "maxConcurrent": 4,
+    "timeout": 30000
+  },
+  "configuration": {
+    "headless": true,
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "screenshotOnFailure": true,
+    "consoleLogLevel": "error"
+  }
+}

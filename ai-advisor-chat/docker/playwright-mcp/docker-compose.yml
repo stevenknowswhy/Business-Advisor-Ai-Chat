@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  playwright-mcp:
+    build: .
+    container_name: playwright-mcp
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./test-results:/app/test-results
+    networks:
+      - testing-network
+
+networks:
+  testing-network:
+    driver: bridge
+
+volumes:
+  test-results:

@@ -97,7 +97,7 @@ export const create = mutation({
       components: args.components,
       metadata: args.metadata,
       localization: args.localization,
-      modelHint: args.modelHint,
+      modelHint: args.modelHint as "openrouter" | "glm" | "hybrid" | undefined,
       tags: args.tags,
       createdAt: args.createdAt,
       updatedAt: args.updatedAt,
@@ -124,11 +124,39 @@ export const createAdvisor = mutation({
     tags: v.optional(v.array(v.string())),
     schemaVersion: v.optional(v.string()),
     status: v.optional(v.union(v.literal("active"), v.literal("inactive"), v.literal("archived"))),
+    // Marketplace fields
+    ownerId: v.optional(v.id("users")),
+    isPublic: v.optional(v.boolean()),
+    featured: v.optional(v.boolean()),
+    category: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
     const resolvedImage = (args.persona as any)?.image || args.imageUrl;
     const resolvedTags = args.tags || (args.metadata?.tags as string[] | undefined) || [];
+
+    // Auto-determine category if not provided
+    const resolvedCategory = args.category || (() => {
+      const title = ((args.persona as any)?.title || '').toLowerCase();
+      const specialties = ((args.persona as any)?.specialties || []).join(' ').toLowerCase();
+
+      if (title.includes('ceo') || title.includes('strategy') || title.includes('business')) {
+        return "business";
+      } else if (title.includes('cto') || title.includes('technical') || title.includes('engineering')) {
+        return "technical";
+      } else if (title.includes('cmo') || title.includes('marketing') || specialties.includes('marketing')) {
+        return "marketing";
+      } else if (title.includes('cfo') || title.includes('finance') || specialties.includes('finance')) {
+        return "finance";
+      } else if (title.includes('product') || specialties.includes('product')) {
+        return "product";
+      } else if (title.includes('sales') || specialties.includes('sales')) {
+        return "sales";
+      } else {
+        return "general";
+      }
+    })();
+
     const advisorId = await ctx.db.insert("advisors", {
       firstName: args.firstName,
       lastName: args.lastName,
@@ -140,8 +168,13 @@ export const createAdvisor = mutation({
       components: args.components || [],
       metadata: args.metadata as any,
       localization: args.localization as any,
-      modelHint: args.modelHint,
+      modelHint: args.modelHint as "openrouter" | "glm" | "hybrid" | undefined,
       tags: resolvedTags,
+      // Marketplace fields
+      ownerId: args.ownerId,
+      isPublic: args.isPublic || false, // Default to private
+      featured: args.featured || false,
+      category: resolvedCategory,
       createdAt: now,
       updatedAt: now,
     });
@@ -523,5 +556,88 @@ export const seedSampleAdvisors = mutation({
     }
 
     return { count, message: `Successfully created ${count} sample advisors` };
+  },
+});
+
+// Create advisor from team template
+export const createAdvisorFromTeam = mutation({
+  args: {
+    advisorData: v.object({
+      name: v.string(),
+      title: v.string(),
+      oneLiner: v.string(),
+      expertise: v.array(v.string()),
+      persona: v.any(),
+    }),
+    userId: v.string(),
+    source: v.union(v.literal("marketplace"), v.literal("team"), v.literal("migration"), v.literal("custom")),
+    teamId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Get user record from clerk ID
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.userId))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Create the advisor
+    const advisorId = await ctx.db.insert("advisors", {
+      firstName: args.advisorData.name.split(" ")[0] || "",
+      lastName: args.advisorData.name.split(" ").slice(1).join(" "),
+      imageUrl: undefined,
+      schemaVersion: "1.1-base",
+      status: "active",
+      ownerId: user._id,
+      isPublic: false, // Team-created advisors are private to the user
+      persona: {
+        ...args.advisorData.persona,
+        name: args.advisorData.name,
+        title: args.advisorData.title,
+        description: args.advisorData.oneLiner,
+        oneLiner: args.advisorData.oneLiner,
+        expertise: args.advisorData.expertise,
+      },
+      tags: args.advisorData.expertise.map(exp => exp.toLowerCase()),
+      category: "general", // Default category, can be overridden
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    // Add to user's selected advisors
+    await ctx.db.insert("userAdvisors", {
+      userId: user._id,
+      advisorId,
+      selectedAt: Date.now(),
+      source: args.source,
+      teamId: args.teamId,
+    });
+
+    return { advisorId, success: true };
+  },
+});
+
+// Get multiple advisors by IDs - placeholder implementation for team functionality
+export const getMany = action({
+  args: { ids: v.array(v.id("advisors")) },
+  handler: async (ctx, args): Promise<{ ok: true; advisors: Array<{ _id: string; name: string; oneLiner: string; handle: string; category?: string; avatarUrl?: string }> }> => {
+    // Placeholder implementation - return mock data for build compatibility
+    console.log("Getting advisors by IDs:", args.ids);
+
+    // Return mock advisors for now
+    return {
+      ok: true,
+      advisors: args.ids.map(id => ({
+        _id: id,
+        name: `Mock Advisor ${id}`,
+        oneLiner: "Mock advisor for team creation",
+        handle: `mock-advisor-${id}`,
+        category: "general",
+        avatarUrl: undefined,
+      }))
+    };
   },
 });

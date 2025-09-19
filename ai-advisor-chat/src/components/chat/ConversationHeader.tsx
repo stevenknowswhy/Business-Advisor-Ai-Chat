@@ -6,6 +6,19 @@ import { getAdvisorInitials, getAdvisorColor, type Advisor, type Conversation } 
 import { AuthHeader } from "~/components/auth/AuthHeader";
 import { ConversationsAPI } from "~/lib/api";
 import { HamburgerMenu } from "~/components/ui/HamburgerMenu";
+import { ModelSelector } from "./ModelSelector";
+
+const getDefaultModelForCategory = (category?: string): string => {
+  const categoryDefaults: Record<string, string> = {
+    'Technical': 'anthropic/claude-3-haiku',
+    'Business': 'anthropic/claude-3-sonnet',
+    'Creative': 'anthropic/claude-3-haiku',
+    'Customer Service': 'openai/gpt-3.5-turbo',
+    'Research': 'anthropic/claude-3-sonnet',
+    'Strategy': 'anthropic/claude-3-opus',
+  };
+  return categoryDefaults[category || ''] || 'anthropic/claude-3-haiku';
+};
 
 interface ConversationHeaderProps {
   conversation: Conversation | null;
@@ -132,6 +145,18 @@ export function ConversationHeader({ conversation, activeAdvisor, advisorSwitche
 
         {/* Right side - Actions */}
         <div className="flex items-center space-x-2">
+          {activeAdvisor && (
+            <ModelSelector
+              advisorId={activeAdvisor.id}
+              advisorName={activeAdvisor.name}
+              advisorDefaultModel={activeAdvisor.modelHint || getDefaultModelForCategory(activeAdvisor.category)}
+              category={activeAdvisor.category}
+              onModelChange={(modelId) => {
+                console.log('Model changed to:', modelId);
+                // TODO: Update conversation to use new model
+              }}
+            />
+          )}
           <button
             type="button"
             onClick={() => setShowAdvisorInfo(!showAdvisorInfo)}

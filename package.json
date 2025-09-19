@@ -1,0 +1,10 @@
+{
+  "name": "ai-advisor-app-root",
+  "private": true,
+  "scripts": {
+    "test:ai": "npm --prefix ai-advisor-chat test",
+    "test:cross": "node ./ai-advisor-chat/node_modules/jest/bin/jest.js -c jest.cross.config.ts --runInBand",
+    "test": "npm run test:ai && npm run test:cross"
+  }
+}
+
